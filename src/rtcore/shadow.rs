@@ -1,0 +1,47 @@
+use crate::geometry::point::Point3;
+use crate::geometry::ray::{Ray, HitRecord};
+use crate::geometry::vector3::Vector3;
+use crate::scene::RTXContext;
+
+pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vector3) {
+    // Add roussian roulette path termination
+    // Which includes a scalar, which scales ray inclusion
+    // let rr_startpoint = max_depth/2;
+
+    let mut rr_factor = 1.0;
+    // Start terminating rays after 10 bounces
+    if depth > 10 {
+      // this should ramp from 0 - 1;
+      // let rr_stop_probability = (depth - rr_startpoint) as f32 / max_depth as f32;
+      let rr_stop_probability = 0.1;
+      if context.rng.next_f32() <= rr_stop_probability {
+        return;
+      }
+      rr_factor = 1.0 / (1.0 - rr_stop_probability);
+    }
+
+    // No more hard limits.
+    // if depth == max_depth { return; }
+
+    let mut record = HitRecord::new();
+
+    // Check for intersection
+    let hit = context.scene.intersect(ray, 0.001, 100000.0, &mut record);
+    if !hit { return };
+    
+    let mut next_ray: Ray = Ray::new(Point3::default(), Vector3::new(0.0, 0.0, 1.0));
+    let mut attenuation = Vector3::default();
+    let material = record.material.unwrap();
+
+    // Cast a new ray for each lightsource in the scene, now
+
+    // process the first term of the rendering equation (self-emittance)
+    *color += material.emission_at(ray, &record) * rr_factor;
+
+    if material.just_scatter(ray, &mut next_ray, &mut attenuation, &record, context) {
+      // Process the next ray :)
+      let mut tmp_color = Vector3::default();
+      trace(&next_ray, depth + 1, context, &mut tmp_color);
+      *color += tmp_color * attenuation * rr_factor;
+    }
+}

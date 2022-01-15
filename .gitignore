@@ -1,0 +1,20 @@
+/target
+/references
+
+# Old sources, used for initial development
+/src_before_vec3_dep
+/src_old
+
+# Generated Files
+/output
+*.ppm
+*.pgm
+*.svg
+
+# Models
+*.stl
+/models
+
+# Notes
+*.txt
+
