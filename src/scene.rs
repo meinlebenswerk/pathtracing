@@ -44,6 +44,7 @@ impl<'object, 'material> Scene<'object, 'material> {
     }
   }
 
+  #[allow(dead_code)]
   pub fn get_random_light(&self, context: &mut RTXContext) -> &'object dyn RTXIntersectable<'material> {
     let index = ((self.lights.len() - 1) as f32 * context.rng.next_f32()) as usize;
     self.lights[index]

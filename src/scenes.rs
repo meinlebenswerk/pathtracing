@@ -1,7 +1,7 @@
-use crate::{objects::triangle::Triangle, geometry::vector3::Vector3};
+use crate::{objects::triangle::Triangle, geometry::vector::Vector3f};
 
 
-pub fn triangulate_square(points: &[Vector3]) -> Vec<Triangle> {
+pub fn triangulate_square(points: &[Vector3f]) -> Vec<Triangle> {
   assert!(points.len() == 4);
   let tris = vec![
     Triangle::new(points[0], points[1], points[2]),

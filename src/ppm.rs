@@ -2,7 +2,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 use crate::output::QuantisedColor;
 
 fn clamp(val: f32, min: f32, max: f32) -> f32 {
@@ -10,7 +10,8 @@ fn clamp(val: f32, min: f32, max: f32) -> f32 {
 }
 
 // This is a lot faster on WSL due to the bad fs-translation
-pub fn dump_ppm(data: &[Vector3], size: (usize, usize), filename: &str) -> std::io::Result<()> {
+#[allow(dead_code)]
+pub fn dump_ppm(data: &[Vector3f], size: (usize, usize), filename: &str) -> std::io::Result<()> {
 
   // Dump framebuffer.data
   let capacity = (size.0 * size.1 * 3) + 256;
@@ -39,6 +40,7 @@ pub fn dump_ppm(data: &[Vector3], size: (usize, usize), filename: &str) -> std::
   Ok(())
 }
 
+#[allow(dead_code)]
 pub fn dump_ppm_raw(data: &[QuantisedColor], size: (usize, usize), filename: &str) -> std::io::Result<()> {
   let capacity = (size.0 * size.1 * 3) + 256;
   let mut buffer: Vec<u8> = Vec::with_capacity(capacity);

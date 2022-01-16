@@ -1,25 +1,28 @@
 use crate::prng::PRNG;
 
-use super::{vector3::Vector3, point::Point3};
+use super::{vector::Vector3f, point::Point3f};
 
 // Vector utils
 
-pub fn random_vector(prng: &mut dyn PRNG) -> Vector3 {
+#[allow(dead_code)]
+pub fn random_vector(prng: &mut dyn PRNG) -> Vector3f {
   let a: f32 = (prng.next_f32() - 0.5) * 2.0;
   let b: f32 = (prng.next_f32() - 0.5) * 2.0;
   let c: f32 = (prng.next_f32() - 0.5) * 2.0;
-  Vector3::new(a, b, c)
+  Vector3f::new(a, b, c)
 }
 
-pub fn random_vector_ranged(prng: &mut dyn PRNG, min: f32, max: f32) -> Vector3 {
+#[allow(dead_code)]
+pub fn random_vector_ranged(prng: &mut dyn PRNG, min: f32, max: f32) -> Vector3f {
   let diff = max - min;
   let a: f32 = prng.next_f32()*diff + min;
   let b: f32 = prng.next_f32()*diff + min;
   let c: f32 = prng.next_f32()*diff + min;
-  Vector3::new(a, b, c)
+  Vector3f::new(a, b, c)
 }
 
-pub fn random_vector_in_sphere(prng: &mut dyn PRNG, position: Vector3, radius: f32) -> Vector3 {
+#[allow(dead_code)]
+pub fn random_vector_in_sphere(prng: &mut dyn PRNG, position: Vector3f, radius: f32) -> Vector3f {
   let phi = prng.next_f32() * 2.0 * std::f32::consts::PI;
   let theta = prng.next_f32() * 2.0 * std::f32::consts::PI;
   let r = prng.next_f32() * radius;
@@ -28,10 +31,11 @@ pub fn random_vector_in_sphere(prng: &mut dyn PRNG, position: Vector3, radius: f
   let y = r * f32::sin(phi) * f32::sin(theta);
   let z = r * f32::cos(theta);
 
-  position + Vector3::new(x, y, z)
+  position + Vector3f::new(x, y, z)
 }
 
-pub fn random_vector_on_sphere(prng: &mut dyn PRNG, position: Point3, radius: f32) -> Point3 {
+#[allow(dead_code)]
+pub fn random_vector_on_sphere(prng: &mut dyn PRNG, position: Point3f, radius: f32) -> Point3f {
   let phi = prng.next_f32() * 2.0 * std::f32::consts::PI;
   let theta = prng.next_f32() * 2.0 * std::f32::consts::PI;
   
@@ -39,11 +43,11 @@ pub fn random_vector_on_sphere(prng: &mut dyn PRNG, position: Point3, radius: f3
   let y = radius * f32::sin(phi) * f32::sin(theta);
   let z = radius * f32::cos(theta);
 
-  position + Vector3::new(x, y, z)
+  position + Vector3f::new(x, y, z)
 }
 
-
-pub fn random_vector_in_unit_sphere(prng: &mut dyn PRNG) -> Vector3 {
+#[allow(dead_code)]
+pub fn random_vector_in_unit_sphere(prng: &mut dyn PRNG) -> Vector3f {
   let phi = prng.next_f32() * 2.0 * std::f32::consts::PI;
   let theta = prng.next_f32() * 2.0 * std::f32::consts::PI;
 
@@ -51,16 +55,61 @@ pub fn random_vector_in_unit_sphere(prng: &mut dyn PRNG) -> Vector3 {
   let y = f32::sin(phi) * f32::sin(theta);
   let z = f32::cos(theta);
   
-  Vector3::new(x, y, z)
+  Vector3f::new(x, y, z)
 }
+
+
+
+// Math / typing utils
+pub trait MinMax {
+  fn min(a: Self, b: Self) -> Self; 
+  fn max(a: Self, b: Self) -> Self; 
+}
+
+impl MinMax for f32 {
+  fn min(a: Self, b: Self) -> Self {
+    if a > b { b } else { a }
+  }
+  fn max(a: Self, b: Self) -> Self {
+    if a > b { a } else { b }
+  }
+}
+
+impl MinMax for f64 {
+  fn min(a: Self, b: Self) -> Self {
+    if a > b { b } else { a }
+  }
+  fn max(a: Self, b: Self) -> Self {
+    if a > b { a } else { b }
+  }
+}
+
+impl MinMax for i32 {
+  fn min(a: Self, b: Self) -> Self {
+    if a > b { b } else { a }
+  }
+  fn max(a: Self, b: Self) -> Self {
+    if a > b { a } else { b }
+  }
+}
+
+impl MinMax for i64 {
+  fn min(a: Self, b: Self) -> Self {
+    if a > b { b } else { a }
+  }
+  fn max(a: Self, b: Self) -> Self {
+    if a > b { a } else { b }
+  }
+}
+
 
 
 //  TODO: Move them somewhere else.
-pub fn reflect_vector(v: &Vector3, n: &Vector3) -> Vector3 {
+pub fn reflect_vector(v: &Vector3f, n: &Vector3f) -> Vector3f {
   *v - 2.0 * v.dot(n) * *n
 }
 
-pub fn refract_vector(incident: &Vector3, normal: &Vector3, refraction_ratio: f32) -> Vector3 {
+pub fn refract_vector(incident: &Vector3f, normal: &Vector3f, refraction_ratio: f32) -> Vector3f {
   // ior = c / v
   // Snell: n2 * sin(phi2) = n1 * sin(phi1)
   // where phi2 and n2 are the angle/ior of the material we refract into
@@ -76,32 +125,34 @@ pub fn refract_vector(incident: &Vector3, normal: &Vector3, refraction_ratio: f3
 
 
 // Stolen from smallpaint https://github.com/8BitRick/smallpaint/blob/master/with_bvh/smallpaint.cpp
-pub fn generate_orthonormal_system(v: &Vector3) -> [Vector3; 3] {
+pub fn generate_orthonormal_system(v: &Vector3f) -> [Vector3f; 3] {
   let v2;
   let inverse_length;
   if f32::abs(v.x) > f32::abs(v.y) {
     // project onto the y = 0 plane and construct normalized orthogonal vector there
     inverse_length = 1.0 / (v.x * v.x + v.z * v.z).sqrt();
-    v2 = Vector3::new(-v.z * inverse_length, 0.0, v.x * inverse_length);
+    v2 = Vector3f::new(-v.z * inverse_length, 0.0, v.x * inverse_length);
   } else {
     // project onto the x = 0 plane and construct normalized orthogonal vector there
     inverse_length = 1.0 / (v.y * v.y + v.z * v.z).sqrt();
-    v2 = Vector3::new(0.0, v.z * inverse_length, -v.y * inverse_length);
+    v2 = Vector3f::new(0.0, v.z * inverse_length, -v.y * inverse_length);
   }
   let v3 = v.cross(&v2);
   [v.clone(), v2, v3]
 }
 
 // Point Utils
-
-pub fn distance(p1: &Point3, p2: &Point3) -> f32 {
+#[allow(dead_code)]
+pub fn distance(p1: &Point3f, p2: &Point3f) -> f32 {
   (p1 - p2).length()
 }
 
-pub fn distance_squared(p1: &Point3, p2: &Point3) -> f32 {
+#[allow(dead_code)]
+pub fn distance_squared(p1: &Point3f, p2: &Point3f) -> f32 {
   (p1 - p2).length_squared()
 }
 
-pub fn lerp(t:f32, a: &Point3, b: &Point3) -> Point3 {
+#[allow(dead_code)]
+pub fn lerp(t:f32, a: &Point3f, b: &Point3f) -> Point3f {
   (1.0 - t) * a + t * b
 }

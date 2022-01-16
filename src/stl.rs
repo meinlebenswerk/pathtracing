@@ -1,5 +1,5 @@
-use crate::geometry::point::Point3;
-use crate::geometry::vector3::Vector3;
+use crate::geometry::point::Point3f;
+use crate::geometry::vector::Vector3f;
 use crate::material::RTXMaterial;
 use crate::objects::mesh::Mesh;
 use crate::objects::triangle::Triangle;
@@ -8,13 +8,14 @@ use std::fs::File;
 use std::io::{SeekFrom, Cursor};
 use byteorder::{ LittleEndian, ReadBytesExt };
 
-fn read_point(rdr: &mut std::io::Cursor<std::vec::Vec<u8>>) -> std::io::Result<Vector3> {
+fn read_point(rdr: &mut std::io::Cursor<std::vec::Vec<u8>>) -> std::io::Result<Vector3f> {
   let x = rdr.read_f32::<LittleEndian>()?;
   let y = rdr.read_f32::<LittleEndian>()?;
   let z = rdr.read_f32::<LittleEndian>()?;
-  Ok(Vector3::new(x, y, z))
+  Ok(Vector3f::new(x, y, z))
 }
 
+#[allow(dead_code)]
 pub fn load_triangles_from_stl(filename: &str) -> std::io::Result<Vec<Triangle>> {
   let mut file = File::open(filename)?;
   let mut triangles: Vec<Triangle> = Vec::new();
@@ -65,7 +66,8 @@ pub fn load_triangles_from_stl(filename: &str) -> std::io::Result<Vec<Triangle>>
   Ok(triangles)
 }
 
-pub fn create_mesh_from_stl<'material>(filename: &'material str, center: Point3, material: &'material dyn RTXMaterial) -> std::io::Result<Mesh<'material>> {
+#[allow(dead_code)]
+pub fn create_mesh_from_stl<'material>(filename: &'material str, center: Point3f, material: &'material dyn RTXMaterial) -> std::io::Result<Mesh<'material>> {
   let triangles = load_triangles_from_stl(filename)?;
   Ok(Mesh::new(center, triangles, material))
 }

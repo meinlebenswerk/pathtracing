@@ -1,17 +1,17 @@
-use crate::geometry::{vector3::Vector3, ray::Ray, point::Point3};
+use crate::geometry::{vector::Vector3f, ray::Ray, point::Point3f};
 
 
 pub struct Camera {
-  position: Point3,
-  pub w: Vector3,
-  pub u: Vector3,
-  pub v: Vector3,
+  position: Point3f,
+  pub w: Vector3f,
+  pub u: Vector3f,
+  pub v: Vector3f,
   width: f32,
   height: f32
 }
 
 impl Camera {
-  pub fn new(position: Point3, look_at: Point3, v_up: Vector3, vfov: f32, aspect_ratio: f32) -> Self {
+  pub fn new(position: Point3f, look_at: Point3f, v_up: Vector3f, vfov: f32, aspect_ratio: f32) -> Self {
 
     let theta = vfov/180.0 * std::f32::consts::PI;
     let height = f32::tan(theta/2.0);

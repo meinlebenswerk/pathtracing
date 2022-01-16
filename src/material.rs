@@ -1,7 +1,7 @@
 
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::{random_vector, reflect_vector, random_vector_in_unit_sphere, refract_vector, generate_orthonormal_system};
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 use crate::scene::{ RTXContext };
 
 // What does a material do?
@@ -12,30 +12,31 @@ use crate::scene::{ RTXContext };
 pub trait RTXMaterial {
   fn is_emissive(&self) -> bool;
   fn counts_as_light(&self) -> bool;
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool;
+  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool;
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool;
-  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3;
+  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool;
+  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3f;
 }
 
 
 // Helper funtions
 
-fn hemisphere(u1: f32, u2: f32) -> Vector3 {
+fn hemisphere(u1: f32, u2: f32) -> Vector3f {
   let r = f32::sqrt(1.0 - u1*u1);
   let phi = 2.0 * std::f32::consts::PI * u2;
-  Vector3::new(f32::cos(phi)*r, f32::sin(phi)*r, u1)
+  Vector3f::new(f32::cos(phi)*r, f32::sin(phi)*r, u1)
 }
 
 
 // Diffuse Material
 
 pub struct DiffuseMaterial {
-  albedo: Vector3
+  albedo: Vector3f
 }
 
 impl DiffuseMaterial {
-  pub fn new(mut albedo: Vector3) -> Self {
+  #[allow(dead_code)]
+  pub fn new(albedo: Vector3f) -> Self {
     Self {
       albedo: albedo.normalize()
     }
@@ -43,7 +44,7 @@ impl DiffuseMaterial {
 }
 
 impl RTXMaterial for DiffuseMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     // We could influence the scatter direction in the direction of a random light...
     // let light_position = context.scene.get_random_light(context).get_position();
     // let light_direction = light_position -  record.point;
@@ -73,16 +74,16 @@ impl RTXMaterial for DiffuseMaterial {
     true
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let sampled_direction = hemisphere(context.rng.next_f32(), context.rng.next_f32());
 
     // Now comes some black-magic I don't understand
     let ons = generate_orthonormal_system(&record.normal);
-    let rdx = Vector3::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
-    let rdy = Vector3::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
-    let rdz = Vector3::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
+    let rdx = Vector3f::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
+    let rdy = Vector3f::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
+    let rdz = Vector3f::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
     
-    *next_ray = Ray::new(record.point, Vector3::new(rdx, rdy, rdz));
+    *next_ray = Ray::new(record.point, Vector3f::new(rdx, rdy, rdz));
     
     // Diffuse BRDF cos_theta:
     // The factor is weird, though
@@ -92,7 +93,7 @@ impl RTXMaterial for DiffuseMaterial {
 
   fn is_emissive(&self) -> bool { false }
   fn counts_as_light(&self) -> bool { false }
-  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3 { Vector3::default() }
+  fn emission_at(&self, _ray: &Ray, _record: &HitRecord) -> Vector3f { Vector3f::default() }
 }
 
 
@@ -100,11 +101,12 @@ impl RTXMaterial for DiffuseMaterial {
 
 pub struct MetalMaterial {
   roughness: f32,
-  albedo: Vector3
+  albedo: Vector3f
 }
 
 impl MetalMaterial {
-  pub fn new(albedo: Vector3, roughness: f32) -> Self {
+  #[allow(dead_code)]
+  pub fn new(albedo: Vector3f, roughness: f32) -> Self {
     Self {
       roughness,
       albedo
@@ -113,7 +115,7 @@ impl MetalMaterial {
 }
 
 impl RTXMaterial for MetalMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let reflected = reflect_vector(&ray.direction, &record.normal);
     let direction = reflected + self.roughness * random_vector_in_unit_sphere(context.rng);
     *next_ray = Ray::new(record.point, direction);
@@ -121,15 +123,15 @@ impl RTXMaterial for MetalMaterial {
     next_ray.direction.dot(&record.normal) > 0.0
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let sampled_direction = hemisphere(context.rng.next_f32(), context.rng.next_f32());
 
     // Now comes some black-magic I don't understand
     let ons = generate_orthonormal_system(&record.normal);
-    let rdx = Vector3::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
-    let rdy = Vector3::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
-    let rdz = Vector3::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
-    let direction_diffuse = Vector3::new(rdx, rdy, rdz);
+    let rdx = Vector3f::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
+    let rdy = Vector3f::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
+    let rdz = Vector3f::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
+    let direction_diffuse = Vector3f::new(rdx, rdy, rdz);
     
 
     // Metallic scattering
@@ -151,7 +153,7 @@ impl RTXMaterial for MetalMaterial {
 
   fn is_emissive(&self) -> bool { false }
   fn counts_as_light(&self) -> bool { false }
-  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3 { Vector3::default() }
+  fn emission_at(&self, _ray: &Ray, _record: &HitRecord) -> Vector3f { Vector3f::default() }
 }
 
 // Dielectric Material
@@ -161,6 +163,7 @@ pub struct DielectricMaterial {
 }
 
 impl DielectricMaterial {
+  #[allow(dead_code)]
   pub fn new(ior: f32) -> Self {
     Self {
       ior
@@ -175,7 +178,7 @@ impl DielectricMaterial {
 }
 
 impl RTXMaterial for DielectricMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let refraction_ratio = if record.front_face { 1.0/self.ior } else { self.ior };
 
     let cos_theta = f32::min((-ray.direction).dot(&record.normal), 1.0);
@@ -190,15 +193,15 @@ impl RTXMaterial for DielectricMaterial {
       direction = refract_vector(&ray.direction, &record.normal, refraction_ratio);
     }
 
-    // direction = Vector3::refract(&ray.direction, &record.normal, refraction_ratio);
+    // direction = Vector3f::refract(&ray.direction, &record.normal, refraction_ratio);
 
     *next_ray = Ray::new(record.point, direction);
-    *attenutation = Vector3::new(1.0, 1.0, 1.0);
+    *attenutation = Vector3f::new(1.0, 1.0, 1.0);
 
     true
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let mut normal = record.normal.clone();
     let mut ior = 1.0 / self.ior;
 
@@ -227,14 +230,14 @@ impl RTXMaterial for DielectricMaterial {
     *next_ray = Ray::new(record.point, direction);
 
     // Why? who the fuck knows
-    *attenuation = Vector3::new(1.15, 1.15, 1.15);
+    *attenuation = Vector3f::new(1.15, 1.15, 1.15);
 
     true
   }
 
   fn is_emissive(&self) -> bool { false }
   fn counts_as_light(&self) -> bool { false }
-  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3 { Vector3::default() }
+  fn emission_at(&self, _ray: &Ray, _record: &HitRecord) -> Vector3f { Vector3f::default() }
 }
 
 // Dielectric Material
@@ -242,36 +245,37 @@ impl RTXMaterial for DielectricMaterial {
 pub struct NormalMaterial {}
 
 impl NormalMaterial {
+  #[allow(dead_code)]
   pub fn new() -> Self {
     Self {}
   }
 }
 
 impl RTXMaterial for NormalMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &mut RTXContext) -> bool {
     // let normal = if record.front_face { record.normal } else { -record.normal };
     let normal = record.normal;
     *attenutation = (normal + 1.0) / 2.0;
     // *attenutation = record.normal;
-    // *attenutation = Vector3::new(1.0, 1.0, 1.0);
+    // *attenutation = Vector3f::new(1.0, 1.0, 1.0);
     false
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     // This behaves just like a diffuse material :)
     let sampled_direction = hemisphere(context.rng.next_f32(), context.rng.next_f32());
 
     // Now comes some black-magic I don't understand
     let ons = generate_orthonormal_system(&record.normal);
-    let rdx = Vector3::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
-    let rdy = Vector3::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
-    let rdz = Vector3::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
+    let rdx = Vector3f::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
+    let rdy = Vector3f::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
+    let rdz = Vector3f::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
     
-    *next_ray = Ray::new(record.point, Vector3::new(rdx, rdy, rdz));
+    *next_ray = Ray::new(record.point, Vector3f::new(rdx, rdy, rdz));
     
     // Diffuse BRDF cos_theta:
     // The factor is weird, though
-    let albedo = Vector3::new(1.0, 1.0, 1.0);
+    let albedo = Vector3f::new(1.0, 1.0, 1.0);
     *attenuation = albedo * next_ray.direction.dot(&record.normal) * 0.1;
 
     false
@@ -279,7 +283,7 @@ impl RTXMaterial for NormalMaterial {
 
   fn is_emissive(&self) -> bool { true }
   fn counts_as_light(&self) -> bool { true }
-  fn emission_at(&self, ray: &Ray, record: &HitRecord) -> Vector3 { 
+  fn emission_at(&self, _ray: &Ray, record: &HitRecord) -> Vector3f { 
     (record.normal + 1.0) / 2.0
   }
 }
@@ -293,12 +297,13 @@ impl RTXMaterial for NormalMaterial {
 
 // Emissive Material
 pub struct EmissiveMaterial {
-  albedo: Vector3,
+  albedo: Vector3f,
   intensity: f32
 }
 
 impl EmissiveMaterial {
-  pub fn new(albedo: Vector3, intensity: f32) -> Self {
+  #[allow(dead_code)]
+  pub fn new(albedo: Vector3f, intensity: f32) -> Self {
     Self {
       albedo,
       intensity
@@ -307,22 +312,22 @@ impl EmissiveMaterial {
 }
 
 impl RTXMaterial for EmissiveMaterial {
-  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3, _record: &HitRecord, _context: &mut RTXContext) -> bool {
+  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &mut RTXContext) -> bool {
     *attenutation = self.albedo * self.intensity;
     false
   }
 
   // Also just use the diffuse scatter
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &mut RTXContext) -> bool {
     let sampled_direction = hemisphere(context.rng.next_f32(), context.rng.next_f32());
 
     // Now comes some black-magic I don't understand
     let ons = generate_orthonormal_system(&record.normal);
-    let rdx = Vector3::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
-    let rdy = Vector3::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
-    let rdz = Vector3::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
+    let rdx = Vector3f::new(ons[1].x, ons[2].x, ons[0].x).dot(&sampled_direction);
+    let rdy = Vector3f::new(ons[1].y, ons[2].y, ons[0].y).dot(&sampled_direction);
+    let rdz = Vector3f::new(ons[1].z, ons[2].z, ons[0].z).dot(&sampled_direction);
     
-    *next_ray = Ray::new(record.point, Vector3::new(rdx, rdy, rdz));
+    *next_ray = Ray::new(record.point, Vector3f::new(rdx, rdy, rdz));
     
     // Diffuse BRDF cos_theta:
     // The factor is weird, though
@@ -333,7 +338,7 @@ impl RTXMaterial for EmissiveMaterial {
 
   fn is_emissive(&self) -> bool { true }
   fn counts_as_light(&self) -> bool { true }
-  fn emission_at(&self, _ray: &Ray, _record: &HitRecord) -> Vector3 { 
+  fn emission_at(&self, _ray: &Ray, _record: &HitRecord) -> Vector3f { 
     self.albedo * self.intensity
   }
 }
@@ -341,12 +346,13 @@ impl RTXMaterial for EmissiveMaterial {
 
 // World Material
 pub struct WorldMaterial {
-  albedo_top: Vector3,
-  albedo_bottom: Vector3,
+  albedo_top: Vector3f,
+  albedo_bottom: Vector3f,
 }
 
 impl WorldMaterial {
-  pub fn new(albedo_top: Vector3, albedo_bottom: Vector3) -> Self {
+  #[allow(dead_code)]
+  pub fn new(albedo_top: Vector3f, albedo_bottom: Vector3f) -> Self {
     Self {
       albedo_top,
       albedo_bottom
@@ -355,19 +361,19 @@ impl WorldMaterial {
 }
 
 impl RTXMaterial for WorldMaterial {
-  fn scatter(&self, ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3, _record: &HitRecord, _context: &mut RTXContext) -> bool {
+  fn scatter(&self, ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &mut RTXContext) -> bool {
     let t = 0.5 * (ray.direction.y + 1.0 );
     *attenutation = (1.0 - t) * self.albedo_bottom + t * self.albedo_top;
     false
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3, record: &HitRecord, context: &mut RTXContext) -> bool {
+  fn just_scatter(&self, _ray: &Ray, _next_ray: &mut Ray, _attenuation: &mut Vector3f, _record: &HitRecord, _context: &mut RTXContext) -> bool {
     false
   }
 
   fn is_emissive(&self) -> bool { true }
   fn counts_as_light(&self) -> bool { false }
-  fn emission_at(&self, ray: &Ray, _record: &HitRecord) -> Vector3 { 
+  fn emission_at(&self, ray: &Ray, _record: &HitRecord) -> Vector3f { 
     let t = 0.5 * (ray.direction.y + 1.0 );
     (1.0 - t) * self.albedo_bottom + t * self.albedo_top
   }

@@ -2,7 +2,7 @@ use std::{ops, fmt};
 
 use float_cmp::approx_eq;
 
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 
 
 #[derive(Clone)]
@@ -113,7 +113,7 @@ impl Matrix {
           // Skip emtpy values
           if self.data[n].abs() <= 2.0 * f32::EPSILON { continue };
           let submatrix = self.submatrix(n);
-          println!("Submat n={}, {}, sign={}", n, submatrix, sign);
+          // println!("Submat n={}, {}, sign={}", n, submatrix, sign);
           det += sign * self.data[n] * submatrix.determinant();
         }
         det
@@ -165,9 +165,9 @@ impl ops::Mul for Matrix {
   }
 }
 
-impl ops::Mul<Vector3> for Matrix {
+impl ops::Mul<Vector3f> for Matrix {
   type Output = Self;
-  fn mul(self, rhs: Vector3) -> Self::Output {
+  fn mul(self, rhs: Vector3f) -> Self::Output {
       assert!(self.w == 3);
       let mut data = vec![0.0; self.h];
 
@@ -196,8 +196,8 @@ impl fmt::Display for Matrix {
 
 
 // Vector <-> mat conversion:
-impl From<Vector3> for Matrix {
-  fn from(vec: Vector3) -> Self {
+impl From<Vector3f> for Matrix {
+  fn from(vec: Vector3f) -> Self {
       Self::new(
         vec![vec.x, vec.y, vec.z],
         3,
@@ -206,10 +206,10 @@ impl From<Vector3> for Matrix {
   }
 }
 
-impl From<Matrix> for Vector3 {
+impl From<Matrix> for Vector3f {
   fn from(mat: Matrix) -> Self {
     assert!(mat.h == 1 && mat.w == 1);
-    Vector3::new(
+    Vector3f::new(
       mat.data[0],
       mat.data[1],
       mat.data[2]
@@ -276,7 +276,7 @@ mod tests {
   #[test]
   fn test_mat_vec_multiply() {
     let mat1 = Matrix::identity(5, 3);
-    let vec1 = Vector3::new(2.0, 3.0, 6.0);
+    let vec1 = Vector3f::new(2.0, 3.0, 6.0);
     let offset = Matrix::new(
       vec![1.0, 3.0, 6.0, 0.0, 0.0],
     5, 1);

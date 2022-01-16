@@ -1,19 +1,28 @@
+use std::fmt::Display;
 use std::ops;
 use std::fmt;
+use std::ops::Add;
+use std::ops::Mul;
 
-use super::vector3::Vector3;
+use num::Signed;
+use num::Zero;
 
+use crate::config::RaytracerFloat;
+use crate::config::RaytracerInt;
 
+use super::utils::MinMax;
+use super::vector::Vector3;
 
 #[derive(Copy, Clone)]
-pub struct Point3 {
-  pub x: f32,
-  pub y: f32,
-  pub z: f32
+pub struct Point3<T: Signed + Copy + Clone + MinMax> {
+  pub x: T,
+  pub y: T,
+  pub z: T
 }
 
-impl Point3 {
-  pub fn new(x: f32, y: f32, z: f32) -> Self {
+impl<T> Point3<T>
+  where T: Signed + Copy + Clone + MinMax {
+  pub fn new(x: T, y: T, z: T) -> Self {
     Self {
       x,
       y,
@@ -38,43 +47,43 @@ impl Point3 {
   }
 
   pub fn min(&self, b: &Self) -> Self {
-    let x = self.x.min(b.x);
-    let y = self.y.min(b.y);
-    let z = self.z.min(b.z);
+    let x = MinMax::min(self.x, b.x);
+    let y = MinMax::min(self.y, b.y);
+    let z = MinMax::min(self.z, b.z);
     Self::new(x, y, z)
   }
 
   pub fn max(&self, b: &Self) -> Self {
-    let x = self.x.max(b.x);
-    let y = self.y.max(b.y);
-    let z = self.z.max(b.z);
+    let x = MinMax::max(self.x, b.x);
+    let y = MinMax::max(self.y, b.y);
+    let z = MinMax::max(self.z, b.z);
     Self::new(x, y, z)
   }
 
-  pub fn as_vector3(&self) -> Vector3 {
+  pub fn as_Vector3(&self) -> Vector3<T> {
     Vector3::new(self.x, self.y, self.z)
   }
 }
 
 // Point3 Addition
-impl ops::Add for Point3 {
-  type Output = Point3;
+impl<T: Add<Output=T> + Copy + Clone + Signed + MinMax> ops::Add for Point3<T> {
+  type Output = Self;
   fn add(self, rhs: Self) -> Self::Output {
       Self::Output::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
   }
 }
 
-impl ops::Add<Vector3> for Point3 {
-  type Output = Point3;
-  fn add(self, rhs: Vector3) -> Self::Output {
+impl<T: Add<Output=T> + Copy + Clone + Signed + MinMax> ops::Add<Vector3<T>> for Point3<T> {
+  type Output = Self;
+  fn add(self, rhs: Vector3<T>) -> Self::Output {
       Self::Output::new(self.x + rhs.x, self.y + rhs.y, self.z + rhs.z)
   }
 }
 
 
 // Point3 Subtraction
-impl ops::Sub for Point3 {
-  type Output = Vector3;
+impl<T: Copy + Clone + Signed + MinMax> ops::Sub for Point3<T> {
+  type Output = Vector3<T>;
   fn sub(self, _rhs: Self) -> Self::Output {
     Self::Output::new(
       self.x - _rhs.x, 
@@ -84,8 +93,8 @@ impl ops::Sub for Point3 {
   }
 }
 
-impl ops::Sub for &Point3 {
-  type Output = Vector3;
+impl<T: Copy + Clone + Signed + MinMax> ops::Sub for &Point3<T> {
+  type Output = Vector3<T>;
   fn sub(self, _rhs: Self) -> Self::Output {
     Self::Output::new(
       self.x - _rhs.x, 
@@ -95,9 +104,9 @@ impl ops::Sub for &Point3 {
   }
 }
 
-impl ops::Sub<Vector3> for Point3 {
-  type Output = Point3;
-  fn sub(self, _rhs: Vector3) -> Self::Output {
+impl<T: Copy + Clone + Signed + MinMax> ops::Sub<Vector3<T>> for Point3<T> {
+  type Output = Vector3<T>;
+  fn sub(self, _rhs: Vector3<T>) -> Self::Output {
     Self::Output::new(
       self.x - _rhs.x, 
       self.y - _rhs.y, 
@@ -108,71 +117,86 @@ impl ops::Sub<Vector3> for Point3 {
 
 
 // Point3 Multiplication
-impl ops::Mul<f32> for Point3 {
-  type Output = Point3;
-  fn mul(self, rhs: f32) -> Self::Output {
+impl<T: Mul<Output = T> + Copy + Clone + Signed + MinMax> ops::Mul<T> for Point3<T> {
+  type Output = Self;
+  fn mul(self, rhs: T) -> Self::Output {
       Self::Output::new(self.x * rhs, self.y * rhs, self.z * rhs)
   }
 }
 
-impl ops::Mul<Point3> for f32 {
-  type Output = Point3;
-  fn mul(self, rhs: Point3) -> Self::Output {
-    Self::Output::new(self * rhs.x, self * rhs.y, self * rhs.z)
+impl<T: Mul<Output=T> + Copy + Clone + Signed + MinMax + Into<RaytracerFloat>> ops::Mul<Point3<T>> for RaytracerFloat {
+  type Output = Point3<RaytracerFloat>;
+  fn mul(self, rhs: Point3<T>) -> Self::Output {
+    Self::Output::new(self * rhs.x.into(), self * rhs.y.into(), self * rhs.z.into())
   }
 }
 
-impl ops::Mul<&Point3> for f32 {
-  type Output = Point3;
-  fn mul(self, rhs: &Point3) -> Self::Output {
-    Self::Output::new(self * rhs.x, self * rhs.y, self * rhs.z)
+impl<T: Copy + Clone + Signed + MinMax + Into<RaytracerFloat>> ops::Mul<&Point3<T>> for RaytracerFloat {
+  type Output = Point3<RaytracerFloat>;
+  fn mul(self, rhs: &Point3<T>) -> Self::Output {
+    Self::Output::new(self * rhs.x.into(), self * rhs.y.into(), self * rhs.z.into())
   }
 }
 
 
 // Point3 Element access
-impl ops::Index<usize> for Point3 {
-  type Output = f32;
+impl<T: Signed + Copy + MinMax + Zero> ops::Index<usize> for Point3<T> {
+  type Output = T;
   fn index(&self, index: usize) -> &Self::Output {
     assert!(index <= 2);
     match index {
       0 => &self.x,
       1 => &self.y,
       2 => &self.z,
-      _ => &0.0
+      _ => &self.x
     }
   }
 }
 
 
 // Point3 Printing
-impl fmt::Display for Point3 {
+impl<T: Copy + Clone + Signed + MinMax + Display> fmt::Display for Point3<T> {
   fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
       write!(formatter, "Point3({:.2}, {:.2}, {:.2})", self.x, self.y, self.z)
   }
 }
 
+
 // Point3 Default
-impl Default for Point3 {
+impl<T: Copy + Clone + Signed + MinMax + Zero> Default for Point3<T> {
   fn default() -> Self {
-    Self::new(0.0, 0.0, 0.0)
+    let val = T::zero();
+    Point3::new(val, val, val)
   }
 }
 
-pub struct Point2 {
-  x: f32,
-  y: f32
+
+#[derive(Clone, Copy)]
+pub struct Point2<T: Copy + Clone + Signed + MinMax> {
+  x: T,
+  y: T
 }
 
-impl Point2 {
-  pub fn new(x: f32, y: f32) -> Self {
+impl<T: Copy + Clone + Signed + MinMax> Point2<T> {
+  #[allow(dead_code)]
+  pub fn new(x: T, y: T) -> Self {
     Self {
       x,
       y,
     }
   }
-
-  pub fn from_point3(p: &Point3) -> Self {
+  #[allow(dead_code)]
+  pub fn from_point3(p: &Point3<T>) -> Self {
     Self::new(p.x, p.y)
   }
 }
+
+#[allow(dead_code)]
+pub type Point3f = Point3<RaytracerFloat>;
+#[allow(dead_code)]
+pub type Point3i = Point3<RaytracerInt>;
+
+#[allow(dead_code)]
+pub type Point2f = Point2<RaytracerFloat>;
+#[allow(dead_code)]
+pub type Point2i = Point2<RaytracerInt>;

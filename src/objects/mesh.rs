@@ -1,19 +1,19 @@
-use crate::{material::{ RTXMaterial }, geometry::{point::Point3}};
+use crate::{material::{ RTXMaterial }, geometry::{point::Point3f}};
 
 use super::triangle::Triangle;
 
 pub struct Mesh<'material> {
-  pub center: Point3,
+  pub center: Point3f,
   pub material: &'material dyn RTXMaterial,
   pub triangles: Vec<Triangle<'material>>
 }
 
 impl<'material> Mesh<'material> {
-  pub fn new(center: Point3, triangles: Vec<Triangle<'material>>, material: &'material dyn RTXMaterial) -> Self {
+  pub fn new(center: Point3f, triangles: Vec<Triangle<'material>>, material: &'material dyn RTXMaterial) -> Self {
 
     // calculate current center
     // I think just adding up all elements should work.
-    let world_center = Point3::default();
+    let world_center = Point3f::default();
     let offset = &center - &world_center;
 
     Self {

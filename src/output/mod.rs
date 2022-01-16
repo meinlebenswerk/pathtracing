@@ -1,4 +1,4 @@
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 
 pub mod reinhard_devlin;
 
@@ -25,7 +25,7 @@ impl QuantisedColor {
 }
 
 
-fn rgb_to_luminance(color: &Vector3) -> f32 {
-  let scaling = Vector3::new(0.212671, 0.71516, 0.072169);
+fn rgb_to_luminance(color: &Vector3f) -> f32 {
+  let scaling = Vector3f::new(0.212671, 0.71516, 0.072169);
   scaling.dot(color)
 }

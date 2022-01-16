@@ -23,6 +23,7 @@ impl Default for RTArguments {
 
 // Help
 
+#[allow(dead_code)]
 fn print_help(program_name: &str) {
   let default_args = RTArguments::default();
   println!("Usage: {} [options]", program_name);

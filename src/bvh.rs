@@ -1,21 +1,19 @@
-use crate::geometry::point::Point3;
+use crate::geometry::point::Point3f;
 use crate::geometry::ray::Ray;
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::scene::{ Scene };
 use std::fmt;
-use std::ops;
-
 // A simple BVH Implementation
 
-#[derive(Clone, Copy)]
+#[derive(Copy, Clone)]
 pub struct BoundingVolume {
-  min: Point3,
-  max: Point3
+  min: Point3f,
+  max: Point3f
 }
 
 impl BoundingVolume {
-  pub fn new(min: Point3, max: Point3) -> Self {
+  pub fn new(min: Point3f, max: Point3f) -> Self {
     Self {
       min,
       max
@@ -28,7 +26,8 @@ impl BoundingVolume {
     });
     Self::new(min, max)
   }
-
+  
+  #[allow(dead_code)]
   pub fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32) -> (f32, bool) {
 
 
@@ -133,10 +132,12 @@ impl BoundingVolume {
     t_min < t_bound_max && t_max > t_bound_min
   }
 
-  pub fn diagonal(&self) -> Vector3 {
+  #[allow(dead_code)]
+  pub fn diagonal(&self) -> Vector3f {
     self.max - self.min
   }
 
+  #[allow(dead_code)]
   pub fn maximum_extent(&self) -> usize {
     let diag = self.diagonal();
     if diag.x > diag.y && diag.x > diag.z {
@@ -147,8 +148,9 @@ impl BoundingVolume {
     2
   }
 
-  pub fn lerp(&self, t: &Vector3) -> Vector3 {
-    Vector3::new(
+  #[allow(dead_code)]
+  pub fn lerp(&self, t: &Vector3f) -> Vector3f {
+    Vector3f::new(
       (1.0 - t.x) * self.min.x + t.x * self.max.x,
       (1.0 - t.y) * self.min.y + t.y * self.max.y,
       (1.0 - t.z) * self.min.z + t.z * self.max.z
@@ -193,6 +195,7 @@ impl<'object, 'material> BVHNode<'object, 'material> {
     }
   }
 
+  #[allow(dead_code)]
   fn get_depth(&self, depth: usize) -> usize {
     if self.is_inner { return depth + 1 };
     let left_depth = self.sub_volumes[0].get_depth(depth + 1);
@@ -200,6 +203,7 @@ impl<'object, 'material> BVHNode<'object, 'material> {
     depth.max(left_depth.max(right_depth))
   }
 
+  #[allow(dead_code)]
   pub fn print_tree(&self) {
     println!("BVH Tree w/ depth={}", self.get_depth(0));
   }
@@ -245,6 +249,7 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
       .filter(|(e, _)| e.get_position().y <= y_split)
       .map(|(e, bv)| (*e, *bv))
       .collect();
+
     let children_larger: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().y > y_split)
       .map(|(e, bv)| (*e, *bv))
@@ -254,7 +259,7 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
     println!();
     return BVHNode::new_inner(
       generate_bvh_node_spatial_median(&children_smaller, max), 
-      generate_bvh_node_spatial_median(&children_smaller, max), 
+      generate_bvh_node_spatial_median(&children_larger, max), 
       bounds);
   } else  {
     // println!("Splitting along Z-Axis");

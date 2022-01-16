@@ -1,7 +1,7 @@
-use crate::geometry::point::Point3;
+use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::random_vector_on_sphere;
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::material::{ RTXMaterial };
 use crate::utils::in_range_f32;
@@ -9,14 +9,14 @@ use crate::bvh::BoundingVolume;
 use crate::scene::RTXContext;
 
 pub struct Sphere<'material> {
-  pub center: Point3,
+  pub center: Point3f,
   pub radius: f32,
   inverse_radius: f32,
   pub material: &'material dyn RTXMaterial
 }
 
 impl<'material> Sphere<'material> {
-  pub fn new(center: Point3, radius: f32, material: &'material dyn RTXMaterial) -> Self {
+  pub fn new(center: Point3f, radius: f32, material: &'material dyn RTXMaterial) -> Self {
     Self {
       center,
       radius,
@@ -73,18 +73,18 @@ impl<'material> RTXIntersectable<'material> for Sphere<'material> {
       Some(self.material)
   }
 
-  fn get_position(&self) -> Point3 {
+  fn get_position(&self) -> Point3f {
       self.center
   }
 
   fn get_bounding_volume(&self) -> BoundingVolume {
-    let offset = Vector3::new(self.radius, self.radius, self.radius);
-    let min = self.center - offset;
+    let offset = Vector3f::new(self.radius, self.radius, self.radius);
+    let min = (self.center - offset).as_Point3();
     let max = self.center + offset;
     BoundingVolume::new(min, max)
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3 {
+  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3f {
     // Project the sphere onto the Plane
     // But that's complicated.
 

@@ -1,4 +1,4 @@
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 
 use super::{
   QuantisedColor,
@@ -9,11 +9,12 @@ use super::{
 // https://github.com/tizian/tonemapper
 // And the original paper
 
-pub fn tonemap_rd(framebuffer: &Vec<Vector3>, f_: f32, c: f32, a: f32) -> Vec<QuantisedColor> {
+#[allow(dead_code)]
+pub fn tonemap_rd(framebuffer: &Vec<Vector3f>, f_: f32, c: f32, a: f32) -> Vec<QuantisedColor> {
   let mut luminance_avg = 0.0;
   let mut luminance_min = f32::INFINITY;
   let mut luminance_max = f32::EPSILON;
-  let mut average_color = Vector3::default();
+  let mut average_color = Vector3f::default();
 
   for pixel in framebuffer {
     let luminance = rgb_to_luminance(pixel);

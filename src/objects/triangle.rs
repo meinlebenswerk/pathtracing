@@ -1,9 +1,8 @@
 use std::fmt;
 
-use crate::geometry::point::Point3;
+use crate::geometry::point::Point3f;
 use crate::geometry::ray::{HitRecord, Ray};
-use crate::geometry::vector3::Vector3;
-use crate::prng::PRNG;
+use crate::geometry::vector::Vector3f;
 use crate::material::RTXMaterial;
 use crate::rtx_traits::RTXIntersectable;
 use crate::bvh::BoundingVolume;
@@ -11,17 +10,17 @@ use crate::scene::RTXContext;
 
 
 pub struct Triangle<'material> {
-  points: [Vector3; 3],
-  normal: Vector3,
+  points: [Vector3f; 3],
+  normal: Vector3f,
   material: Option<&'material dyn RTXMaterial>,
-  center: Point3,
+  center: Point3f,
 
-  edge10: Vector3,
-  edge20: Vector3
+  edge10: Vector3f,
+  edge20: Vector3f
 }
 
 impl<'material> Triangle<'material> {
-  pub fn new(a: Vector3, b: Vector3, c: Vector3) -> Self {
+  pub fn new(a: Vector3f, b: Vector3f, c: Vector3f) -> Self {
     let v0v1 = b - a;
     let v0v2 = c - a;
 
@@ -32,7 +31,7 @@ impl<'material> Triangle<'material> {
       points: [ a, b, c ],
       normal,
       material: None,
-      center: center.as_point3(),
+      center: center.as_Point3(),
       edge10: v0v1,
       edge20: v0v2
     }
@@ -53,7 +52,7 @@ impl<'material> Triangle<'material> {
     if f32::abs(a) < eps { return false; }
 
     let f = 1.0 / a;
-    let s = ray.origin.as_vector3() - vertex0;
+    let s = ray.origin.as_Vector3() - vertex0;
     let u = f * s.dot(&h);
     if u < 0.0 || u > 1.0 { return false; }
 
@@ -75,7 +74,7 @@ impl<'material> Triangle<'material> {
     true
   }
 
-  pub fn translate(&self, offset: &Vector3) -> Self {
+  pub fn translate(&self, offset: &Vector3f) -> Self {
     let a = self.points[0] + *offset;
     let b = self.points[1] + *offset;
     let c = self.points[2] + *offset;
@@ -105,17 +104,17 @@ impl<'material> RTXIntersectable<'material> for Triangle<'material> {
       self.material
   }
 
-  fn get_position(&self) -> Point3 {
+  fn get_position(&self) -> Point3f {
       self.center
   }
 
   fn get_bounding_volume(&self) -> BoundingVolume {
-      let min = Vector3::min_elementwise(&Vector3::min_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
-      let max = Vector3::max_elementwise(&Vector3::max_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
-      BoundingVolume::new(min.as_point3(), max.as_point3())
+      let min = Vector3f::min_elementwise(&Vector3f::min_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
+      let max = Vector3f::max_elementwise(&Vector3f::max_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
+      BoundingVolume::new(min.as_Point3(), max.as_Point3())
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3 {
+  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3f {
     let mut a = context.rng.next_f32();
     let mut b = context.rng.next_f32();
     if a+b >= 1.0 {
@@ -123,6 +122,6 @@ impl<'material> RTXIntersectable<'material> for Triangle<'material> {
       b = 1.0 - b;
     }
 
-    (self.points[0] + a * self.edge10 + b * self.edge20).as_point3()
+    (self.points[0] + a * self.edge10 + b * self.edge20).as_Point3()
   }
 }

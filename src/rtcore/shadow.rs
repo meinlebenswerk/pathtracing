@@ -1,9 +1,10 @@
-use crate::geometry::point::Point3;
+use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
-use crate::geometry::vector3::Vector3;
+use crate::geometry::vector::Vector3f;
 use crate::scene::RTXContext;
 
-pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vector3) {
+#[allow(dead_code)]
+pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vector3f) {
     // Add roussian roulette path termination
     // Which includes a scalar, which scales ray inclusion
     // let rr_startpoint = max_depth/2;
@@ -29,8 +30,8 @@ pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vect
     let hit = context.scene.intersect(ray, 0.001, 100000.0, &mut record);
     if !hit { return };
     
-    let mut next_ray: Ray = Ray::new(Point3::default(), Vector3::new(0.0, 0.0, 1.0));
-    let mut attenuation = Vector3::default();
+    let mut next_ray: Ray = Ray::new(Point3f::default(), Vector3f::new(0.0, 0.0, 1.0));
+    let mut attenuation = Vector3f::default();
     let material = record.material.unwrap();
 
     // Cast a new ray for each lightsource in the scene, now
@@ -40,7 +41,7 @@ pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vect
 
     if material.just_scatter(ray, &mut next_ray, &mut attenuation, &record, context) {
       // Process the next ray :)
-      let mut tmp_color = Vector3::default();
+      let mut tmp_color = Vector3f::default();
       trace(&next_ray, depth + 1, context, &mut tmp_color);
       *color += tmp_color * attenuation * rr_factor;
     }

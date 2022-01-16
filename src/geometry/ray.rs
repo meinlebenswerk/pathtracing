@@ -1,14 +1,14 @@
 use std::fmt;
-use crate::{material::{ RTXMaterial }, geometry::vector3::Vector3};
+use crate::{material::{ RTXMaterial }, geometry::vector::Vector3f};
 
-use super::point::Point3;
+use super::point::Point3f;
 
 #[derive(Copy, Clone)]
 pub struct Ray {
-  pub origin: Point3,
-  pub direction: Vector3,
+  pub origin: Point3f,
+  pub direction: Vector3f,
   pub current_ior: f32,
-  pub inv_direction: Vector3
+  pub inv_direction: Vector3f
 
   // Medium
   // time
@@ -16,7 +16,7 @@ pub struct Ray {
 }
 
 impl Ray {
-  pub fn new(origin: Point3, direction: Vector3) -> Self {
+  pub fn new(origin: Point3f, direction: Vector3f) -> Self {
 
     let dir = direction.normalize();
 
@@ -28,9 +28,9 @@ impl Ray {
     }
   }
 
-  pub fn at(self, t: f32) -> Point3 {
+  pub fn at(self, t: f32) -> Point3f {
     let pos = self.origin + (self.direction * t);
-    Point3::new(pos.x, pos.y, pos.z)
+    Point3f::new(pos.x, pos.y, pos.z)
   }
 }
 
@@ -40,11 +40,11 @@ impl fmt::Display for Ray {
   }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Clone)]
 pub struct HitRecord<'material> {
   pub t: f32,
-  pub point: Point3,
-  pub normal: Vector3,
+  pub point: Point3f,
+  pub normal: Vector3f,
   pub front_face: bool,
   pub material: Option<&'material dyn RTXMaterial>
 }
@@ -53,14 +53,14 @@ impl<'material> HitRecord<'material> {
   pub fn new() -> Self {
     Self {
       t: 0.0,
-      point: Point3::default(),
-      normal: Vector3::default(),
+      point: Point3f::default(),
+      normal: Vector3f::default(),
       front_face: false,
       material: None
     }
   }
 
-  pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vector3) {
+  pub fn set_face_normal(&mut self, ray: &Ray, outward_normal: &Vector3f) {
     self.front_face = ray.direction.dot(outward_normal) < 0.0;
     self.normal = if self.front_face { *outward_normal } else { -*outward_normal };
   }
