@@ -3,6 +3,7 @@ use std::ops;
 use std::fmt;
 use std::ops::Add;
 use std::ops::Mul;
+use std::ops::Sub;
 
 use num::Signed;
 use num::Zero;
@@ -14,14 +15,14 @@ use super::utils::MinMax;
 use super::vector::Vector3;
 
 #[derive(Copy, Clone)]
-pub struct Point3<T: Signed + Copy + Clone + MinMax> {
+pub struct Point3<T: Copy + Clone> {
   pub x: T,
   pub y: T,
   pub z: T
 }
 
 impl<T> Point3<T>
-  where T: Signed + Copy + Clone + MinMax {
+  where T: Copy + Clone + Mul<Output=T> + Add<Output=T> + Sub<Output=T> + Zero {
   pub fn new(x: T, y: T, z: T) -> Self {
     Self {
       x,
@@ -38,6 +39,13 @@ impl<T> Point3<T>
     )
   }
 
+  pub fn as_Vector3(&self) -> Vector3<T> {
+    Vector3::new(self.x, self.y, self.z)
+  }
+}
+
+impl<T> Point3<T>
+  where T: Signed + Copy + Clone {
   pub fn abs(&self) -> Self {
     Self::new(
       self.x.abs(), 
@@ -45,23 +53,21 @@ impl<T> Point3<T>
       self.z.abs()
     )
   }
+}
 
-  pub fn min(&self, b: &Self) -> Self {
-    let x = MinMax::min(self.x, b.x);
-    let y = MinMax::min(self.y, b.y);
-    let z = MinMax::min(self.z, b.z);
+impl<T> MinMax for Point3<T>
+  where T: Copy + Clone + Mul<Output=T> + Add<Output=T> + Sub<Output=T> + Zero + MinMax{
+  fn min(a: &Self, b: &Self) -> Self {
+    let x = MinMax::min(&a.x, &b.x);
+    let y = MinMax::min(&a.y, &b.y);
+    let z = MinMax::min(&a.z, &b.z);
     Self::new(x, y, z)
   }
-
-  pub fn max(&self, b: &Self) -> Self {
-    let x = MinMax::max(self.x, b.x);
-    let y = MinMax::max(self.y, b.y);
-    let z = MinMax::max(self.z, b.z);
+  fn max(a: &Self, b: &Self) -> Self {
+    let x = MinMax::max(&a.x, &b.x);
+    let y = MinMax::max(&a.y, &b.y);
+    let z = MinMax::max(&a.z, &b.z);
     Self::new(x, y, z)
-  }
-
-  pub fn as_Vector3(&self) -> Vector3<T> {
-    Vector3::new(self.x, self.y, self.z)
   }
 }
 
@@ -140,7 +146,7 @@ impl<T: Copy + Clone + Signed + MinMax + Into<RaytracerFloat>> ops::Mul<&Point3<
 
 
 // Point3 Element access
-impl<T: Signed + Copy + MinMax + Zero> ops::Index<usize> for Point3<T> {
+impl<T: Copy + Clone> ops::Index<usize> for Point3<T> {
   type Output = T;
   fn index(&self, index: usize) -> &Self::Output {
     assert!(index <= 2);

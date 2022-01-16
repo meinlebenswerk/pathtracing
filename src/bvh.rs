@@ -1,5 +1,6 @@
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::Ray;
+use crate::geometry::utils::MinMax;
 use crate::geometry::vector::Vector3f;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::scene::{ Scene };
@@ -22,7 +23,7 @@ impl BoundingVolume {
 
   pub fn from(volumes: &Vec<&BoundingVolume>) -> Self {
     let (min, max) = volumes.iter().fold((volumes[0].min, volumes[0].max), | (min, max), e| {
-      (min.min(&e.min), max.max(&e.max))
+      (MinMax::min(&min, &e.min), MinMax::max(&max, &e.max))
     });
     Self::new(min, max)
   }

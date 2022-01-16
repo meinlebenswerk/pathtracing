@@ -32,7 +32,7 @@ pub struct Vector3<T> {
 }
 
 impl<T> Vector3<T>
-  where T: Copy + Clone + Signed + MinMax + Zero {
+  where T: Copy + Clone + Mul<Output=T> + Add<Output=T> + Sub<Output=T> + Zero {
   pub fn new(x: T, y: T, z: T) -> Self {
     Self {
       x,
@@ -53,34 +53,6 @@ impl<T> Vector3<T>
     let x = self.y * vec.z - self.z * vec.y;
     let y = self.z * vec.x - self.x * vec.z;
     let z = self.x * vec.y - self.y * vec.x;
-    Self::new(x, y, z)
-  }
-
-  pub fn clamp(&mut self, min: T, max: T) {
-    self.x = MinMax::max(min, MinMax::min(self.x, max));
-    self.y = MinMax::max(min, MinMax::min(self.y, max));
-    self.z = MinMax::max(min, MinMax::min(self.z, max));
-  }
-
-  pub fn abs(&self) -> Self {
-    Self::new(
-      self.x.abs(), 
-      self.y.abs(), 
-      self.z.abs()
-    )
-  }
-
-  pub fn min_elementwise(a: &Vector3<T>, b: &Vector3<T>) -> Self {
-    let x = MinMax::min(a.x, b.x);
-    let y = MinMax::min(a.y, b.y);
-    let z = MinMax::min(a.z, b.z);
-    Self::new(x, y, z)
-  }
-
-  pub fn max_elementwise(a: &Vector3<T>, b: &Vector3<T>) -> Self {
-    let x = MinMax::max(a.x, b.x);
-    let y = MinMax::max(a.y, b.z);
-    let z = MinMax::max(a.z, b.z);
     Self::new(x, y, z)
   }
 
@@ -109,6 +81,40 @@ impl<T> Vector3<T>
       _ => vec![]
     }
   }
+}
+
+impl<T> Vector3<T> 
+  where T: Copy + Clone + Zero + Signed {
+  pub fn abs(&self) -> Self {
+    Self::new(
+      self.x.abs(), 
+      self.y.abs(), 
+      self.z.abs()
+    )
+  }
+}
+
+impl<T> Vector3<T> 
+  where T: Copy + Clone + Mul<Output=T> + Add<Output=T> + Sub<Output=T> + Zero + MinMax  {
+    pub fn min_elementwise(a: &Vector3<T>, b: &Vector3<T>) -> Self {
+      let x = MinMax::min(&a.x, &b.x);
+      let y = MinMax::min(&a.y, &b.y);
+      let z = MinMax::min(&a.z, &b.z);
+      Self::new(x, y, z)
+    }
+
+    pub fn max_elementwise(a: &Vector3<T>, b: &Vector3<T>) -> Self {
+      let x = MinMax::max(&a.x, &b.x);
+      let y = MinMax::max(&a.y, &b.z);
+      let z = MinMax::max(&a.z, &b.z);
+      Self::new(x, y, z)
+    }
+
+    pub fn clamp(&mut self, min: &T, max: &T) {
+      self.x = MinMax::max(min, &MinMax::min(&self.x, max));
+      self.y = MinMax::max(min, &MinMax::min(&self.y, max));
+      self.z = MinMax::max(min, &MinMax::min(&self.z, max));
+    }
 }
 
 impl<T> Vector3<T>

@@ -62,43 +62,43 @@ pub fn random_vector_in_unit_sphere(prng: &mut dyn PRNG) -> Vector3f {
 
 // Math / typing utils
 pub trait MinMax {
-  fn min(a: Self, b: Self) -> Self; 
-  fn max(a: Self, b: Self) -> Self; 
+  fn min(a: &Self, b: &Self) -> Self; 
+  fn max(a: &Self, b: &Self) -> Self;
 }
 
 impl MinMax for f32 {
-  fn min(a: Self, b: Self) -> Self {
-    if a > b { b } else { a }
+  fn min(a: &Self, b: &Self) -> Self {
+    if a > b { *b } else { *a }
   }
-  fn max(a: Self, b: Self) -> Self {
-    if a > b { a } else { b }
+  fn max(a: &Self, b: &Self) -> Self {
+    if a > b { *a } else { *b }
   }
 }
 
 impl MinMax for f64 {
-  fn min(a: Self, b: Self) -> Self {
-    if a > b { b } else { a }
+  fn min(a: &Self, b: &Self) -> Self {
+    if a > b { *b } else { *a }
   }
-  fn max(a: Self, b: Self) -> Self {
-    if a > b { a } else { b }
+  fn max(a: &Self, b: &Self) -> Self {
+    if a > b { *a } else { *b }
   }
 }
 
 impl MinMax for i32 {
-  fn min(a: Self, b: Self) -> Self {
-    if a > b { b } else { a }
+  fn min(a: &Self, b: &Self) -> Self {
+    if a > b { *b } else { *a }
   }
-  fn max(a: Self, b: Self) -> Self {
-    if a > b { a } else { b }
+  fn max(a: &Self, b: &Self) -> Self {
+    if a > b { *a } else { *b }
   }
 }
 
 impl MinMax for i64 {
-  fn min(a: Self, b: Self) -> Self {
-    if a > b { b } else { a }
+  fn min(a: &Self, b: &Self) -> Self {
+    if a > b { *b } else { *a }
   }
-  fn max(a: Self, b: Self) -> Self {
-    if a > b { a } else { b }
+  fn max(a: &Self, b: &Self) -> Self {
+    if a > b { *a } else { *b }
   }
 }
 
