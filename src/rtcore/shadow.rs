@@ -1,10 +1,11 @@
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::vector::Vector3f;
+use crate::prng::PRNG;
 use crate::scene::RTXContext;
 
 #[allow(dead_code)]
-pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vector3f) {
+pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vector3f, rng: &mut dyn PRNG) {
     // Add roussian roulette path termination
     // Which includes a scalar, which scales ray inclusion
     // let rr_startpoint = max_depth/2;
@@ -15,7 +16,7 @@ pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vect
       // this should ramp from 0 - 1;
       // let rr_stop_probability = (depth - rr_startpoint) as f32 / max_depth as f32;
       let rr_stop_probability = 0.1;
-      if context.rng.next_f32() <= rr_stop_probability {
+      if rng.next_f32() <= rr_stop_probability {
         return;
       }
       rr_factor = 1.0 / (1.0 - rr_stop_probability);
@@ -32,17 +33,17 @@ pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vect
     
     let mut next_ray: Ray = Ray::new(Point3f::default(), Vector3f::new(0.0, 0.0, 1.0));
     let mut attenuation = Vector3f::default();
-    let material = record.material.unwrap();
+    let material = record.material.as_ref().unwrap();
 
     // Cast a new ray for each lightsource in the scene, now
 
     // process the first term of the rendering equation (self-emittance)
     *color += material.emission_at(ray, &record) * rr_factor;
 
-    if material.just_scatter(ray, &mut next_ray, &mut attenuation, &record, context) {
+    if material.just_scatter(ray, &mut next_ray, &mut attenuation, &record, context, rng) {
       // Process the next ray :)
       let mut tmp_color = Vector3f::default();
-      trace(&next_ray, depth + 1, context, &mut tmp_color);
+      trace(&next_ray, depth + 1, context, &mut tmp_color, rng);
       *color += tmp_color * attenuation * rr_factor;
     }
 }

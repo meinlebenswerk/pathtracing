@@ -1,25 +1,27 @@
 use std::fmt;
+use std::sync::Arc;
 
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{HitRecord, Ray};
 use crate::geometry::vector::Vector3f;
 use crate::material::RTXMaterial;
+use crate::prng::PRNG;
 use crate::rtx_traits::RTXIntersectable;
 use crate::bvh::BoundingVolume;
 use crate::scene::RTXContext;
 
 
-pub struct Triangle<'material> {
+pub struct Triangle {
   points: [Vector3f; 3],
   normal: Vector3f,
-  material: Option<&'material dyn RTXMaterial>,
+  material: Option<Arc<Box<dyn RTXMaterial + Send + Sync>>>,
   center: Point3f,
 
   edge10: Vector3f,
   edge20: Vector3f
 }
 
-impl<'material> Triangle<'material> {
+impl Triangle {
   pub fn new(a: Vector3f, b: Vector3f, c: Vector3f) -> Self {
     let v0v1 = b - a;
     let v0v2 = c - a;
@@ -37,7 +39,7 @@ impl<'material> Triangle<'material> {
     }
   }
 
-  pub fn intersect_mt(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord<'material>) -> bool {
+  pub fn intersect_mt(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
     let eps = 1e-10;
     let vertex0 = self.points[0];
     let vertex1 = self.points[1];
@@ -69,7 +71,7 @@ impl<'material> Triangle<'material> {
     record.t = t;
     record.point = ray.at(t);
     record.set_face_normal(ray, &self.normal);
-    record.material = if self.material.is_none() { None } else { Some(self.material.unwrap() )};
+    record.material = if let Some(mat) = &self.material { Some(Arc::clone(mat)) } else { None };
 
     true
   }
@@ -81,27 +83,27 @@ impl<'material> Triangle<'material> {
     Self::new(a, b, c)
   }
 
-  pub fn set_material(&mut self, material: &'material dyn RTXMaterial) {
+  pub fn set_material(&mut self, material: Arc<Box<dyn RTXMaterial + Send + Sync>>) {
     self.material = Some(material);
   }
 }
 
 // Printing
 
-impl<'material> fmt::Display for Triangle<'material> {
+impl fmt::Display for Triangle {
   fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
       write!(formatter, "{}\t{}\t{}\t->\tNormal: {}", self.points[0], self.points[1], self.points[2], self.normal)
   }
 }
 
 
-impl<'material> RTXIntersectable<'material> for Triangle<'material> {
-  fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord<'material>) -> bool {
+impl<'material> RTXIntersectable<'material> for Triangle {
+  fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
       self.intersect_mt(ray, t_min, t_max, record)
   }
 
-  fn get_material(&self) -> Option<&'material dyn RTXMaterial> {
-      self.material
+  fn get_material(&self) -> Option<Arc<Box<dyn RTXMaterial + Send + Sync>>> {
+    if let Some(mat) = &self.material { Some(Arc::clone(mat))} else { None }
   }
 
   fn get_position(&self) -> Point3f {
@@ -114,9 +116,9 @@ impl<'material> RTXIntersectable<'material> for Triangle<'material> {
       BoundingVolume::new(min.as_Point3(), max.as_Point3())
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3f {
-    let mut a = context.rng.next_f32();
-    let mut b = context.rng.next_f32();
+  fn random_point_on_surface(&self, context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
+    let mut a = rng.next_f32();
+    let mut b = rng.next_f32();
     if a+b >= 1.0 {
       a = 1.0 - a;
       b = 1.0 - b;

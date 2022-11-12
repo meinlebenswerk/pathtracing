@@ -1,33 +1,36 @@
+use std::sync::Arc;
+
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::random_vector_on_sphere;
 use crate::geometry::vector::Vector3f;
+use crate::prng::PRNG;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::material::{ RTXMaterial };
 use crate::utils::in_range_f32;
 use crate::bvh::BoundingVolume;
 use crate::scene::RTXContext;
 
-pub struct Sphere<'material> {
+pub struct Sphere {
   pub center: Point3f,
   pub radius: f32,
   inverse_radius: f32,
-  pub material: &'material dyn RTXMaterial
+  pub material: Arc<Box<dyn RTXMaterial + Send + Sync>>
 }
 
-impl<'material> Sphere<'material> {
-  pub fn new(center: Point3f, radius: f32, material: &'material dyn RTXMaterial) -> Self {
+impl Sphere {
+  pub fn new(center: Point3f, radius: f32, material: &Arc<Box<dyn RTXMaterial + Send + Sync>>) -> Self {
     Self {
       center,
       radius,
       inverse_radius: 1.0 / radius,
-      material
+      material: Arc::clone(material)
     }
   }
 }
 
-impl<'material> RTXIntersectable<'material> for Sphere<'material> {
-  fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord<'material>) -> bool {
+impl<'material> RTXIntersectable<'material> for Sphere {
+  fn intersect(&self, ray: &Ray, t_min: f32, t_max: f32, record: &mut HitRecord) -> bool {
     let oc = ray.origin - self.center;
 
     let b = 2.0 * oc.dot(&ray.direction);
@@ -64,13 +67,13 @@ impl<'material> RTXIntersectable<'material> for Sphere<'material> {
     //   println!("Someting weird happened in Sphere intersection, normal is longer than expected, @ {}, r={}, t={}, point={}", outward_normal.len(), self.radius, t, record.point);
     // }
     record.set_face_normal(ray, &outward_normal);
-    record.material = Some(self.material);
+    record.material = Some(Arc::clone(&self.material));
 
     true
   }
 
-  fn get_material(&self) -> Option<&'material dyn RTXMaterial> {
-      Some(self.material)
+  fn get_material(&self) -> Option<Arc<Box<dyn RTXMaterial + Send + Sync>>> {
+      Some(Arc::clone(&self.material))
   }
 
   fn get_position(&self) -> Point3f {
@@ -84,10 +87,10 @@ impl<'material> RTXIntersectable<'material> for Sphere<'material> {
     BoundingVolume::new(min, max)
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext) -> Point3f {
+  fn random_point_on_surface(&self, context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
     // Project the sphere onto the Plane
     // But that's complicated.
 
-    random_vector_on_sphere(context.rng, self.center, self.radius)
+    random_vector_on_sphere(rng, self.center, self.radius)
   }
 }

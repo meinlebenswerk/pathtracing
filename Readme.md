@@ -1,6 +1,7 @@
 # pathtracing
-
 **This Project is a work in progress and expected to change a lot in the future**
+
+![Example Image](./images/example.png)
 
 Following along with [pbrt](https://www.pbrt.org/) in rust as a programming exercise to learn the language.
 

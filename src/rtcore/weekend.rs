@@ -1,9 +1,10 @@
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::vector::Vector3f;
+use crate::prng::PRNG;
 use crate::scene::RTXContext;
 
-pub fn ray_color_weekend(ray: &Ray, depth: usize, context: &mut RTXContext) -> Vector3f {
+pub fn ray_color_weekend(ray: &Ray, depth: usize, context: &RTXContext, rng: &mut dyn PRNG) -> Vector3f {
     // Add roussian roulette path termination
     // Which includes a scalar, which scales ray inclusion
 
@@ -18,19 +19,15 @@ pub fn ray_color_weekend(ray: &Ray, depth: usize, context: &mut RTXContext) -> V
         // println!("Ray Hit something");
         let mut next_ray: Ray = Ray::new(Point3f::default(), Vector3f::new(0.0, 0.0, 1.0));
         let mut attenuation: Vector3f = Vector3f::default();
-        
-        // This can never happen.
-        if record.material.is_none() {
-            println!("Record has no material.");
-            return Vector3f::default();
-        }
 
-        if record.material.unwrap().scatter(ray, &mut next_ray, &mut attenuation, &record, context) {
-            return attenuation * ray_color_weekend(&next_ray, depth - 1, context);
-        }
+        if let Some(material) = &record.material {
+            if material.scatter(ray, &mut next_ray, &mut attenuation, &record, context, rng) {
+                return attenuation * ray_color_weekend(&next_ray, depth - 1, context, rng)
+            }
 
-        if record.material.unwrap().is_emissive() {
-            return attenuation;
+            if material.is_emissive() {
+                return attenuation
+            }
         }
 
         return Vector3f::default();

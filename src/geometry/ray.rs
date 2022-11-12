@@ -1,4 +1,4 @@
-use std::fmt;
+use std::{fmt, sync::Arc};
 use crate::{material::{ RTXMaterial }, geometry::vector::Vector3f};
 
 use super::point::Point3f;
@@ -41,15 +41,15 @@ impl fmt::Display for Ray {
 }
 
 #[derive(Clone)]
-pub struct HitRecord<'material> {
+pub struct HitRecord {
   pub t: f32,
   pub point: Point3f,
   pub normal: Vector3f,
   pub front_face: bool,
-  pub material: Option<&'material dyn RTXMaterial>
+  pub material: Option<Arc<Box<dyn RTXMaterial + Send + Sync>>>
 }
 
-impl<'material> HitRecord<'material> {
+impl HitRecord {
   pub fn new() -> Self {
     Self {
       t: 0.0,
@@ -65,11 +65,11 @@ impl<'material> HitRecord<'material> {
     self.normal = if self.front_face { *outward_normal } else { -*outward_normal };
   }
 
-  pub fn copy_from<'function>(&mut self, record: &'function HitRecord<'material>) {
+  pub fn copy_from<'function>(&mut self, record: &'function HitRecord) {
     self.t = record.t;
     self.point = record.point;
     self.normal = record.normal;
     self.front_face = record.front_face;
-    self.material = record.material;
+    self.material = if let Some(mat) = &record.material { Some(Arc::clone(mat))} else { None };
   }
 }

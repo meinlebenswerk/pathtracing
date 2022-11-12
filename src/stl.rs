@@ -6,6 +6,7 @@ use crate::objects::triangle::Triangle;
 use std::io::{prelude::*, Error};
 use std::fs::File;
 use std::io::{SeekFrom, Cursor};
+use std::sync::Arc;
 use byteorder::{ LittleEndian, ReadBytesExt };
 
 fn read_point(rdr: &mut std::io::Cursor<std::vec::Vec<u8>>) -> std::io::Result<Vector3f> {
@@ -67,7 +68,7 @@ pub fn load_triangles_from_stl(filename: &str) -> std::io::Result<Vec<Triangle>>
 }
 
 #[allow(dead_code)]
-pub fn create_mesh_from_stl<'material>(filename: &'material str, center: Point3f, material: &'material dyn RTXMaterial) -> std::io::Result<Mesh<'material>> {
+pub fn create_mesh_from_stl<'material>(filename: &'material str, center: Point3f, material: &Arc<Box<dyn RTXMaterial + Send + Sync>>) -> std::io::Result<Mesh> {
   let triangles = load_triangles_from_stl(filename)?;
   Ok(Mesh::new(center, triangles, material))
 }

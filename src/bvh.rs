@@ -5,6 +5,7 @@ use crate::geometry::vector::Vector3f;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::scene::{ Scene };
 use std::fmt;
+use std::sync::Arc;
 // A simple BVH Implementation
 
 #[derive(Copy, Clone)]
@@ -166,19 +167,19 @@ impl fmt::Display for BoundingVolume {
 }
 
 
-type Intersectable<'object, 'material> = &'object dyn RTXIntersectable<'material>;
-type IVolPair<'object, 'material> = (Intersectable<'object, 'material>, BoundingVolume);
+type Intersectable<'material> = Arc<(dyn RTXIntersectable<'material> + Send + Sync)>;
+type IVolPair<'material> = (Intersectable<'material>, BoundingVolume);
 
-pub struct BVHNode<'object, 'material> {
+pub struct BVHNode<'material> {
   pub is_inner: bool,
-  pub sub_volumes: Vec<Box<BVHNode<'object, 'material>>>,
-  pub children: Vec<&'object dyn RTXIntersectable<'material>>,
+  pub sub_volumes: Vec<Box<BVHNode<'material>>>,
+  pub children: Vec<Arc<(dyn RTXIntersectable<'material> + Send + Sync)>>,
   pub bounds: BoundingVolume
 }
 
-impl<'object, 'material> BVHNode<'object, 'material> {
+impl<'material> BVHNode<'material> {
 
-  fn new_inner( left: BVHNode<'object, 'material>, right: BVHNode<'object, 'material>, bounds: BoundingVolume) -> Self {
+  fn new_inner( left: BVHNode<'material>, right: BVHNode<'material>, bounds: BoundingVolume) -> Self {
     Self {
       is_inner: true,
       sub_volumes: vec![Box::new(left), Box::new(right)],
@@ -187,7 +188,7 @@ impl<'object, 'material> BVHNode<'object, 'material> {
     }
   }
 
-  fn new_leaf(children: Vec<&'object dyn RTXIntersectable<'material>>, bounds: BoundingVolume) -> Self {
+  fn new_leaf(children: Vec<Arc<(dyn RTXIntersectable<'material> + Send + Sync)>>, bounds: BoundingVolume) -> Self {
     Self {
       is_inner: false,
       sub_volumes: Vec::new(),
@@ -214,10 +215,10 @@ impl<'object, 'material> BVHNode<'object, 'material> {
 // Pretty shitty - it loops ad absurdum
 // It needs a depth-limit
 // But the object-median is much better
-fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<'object, 'material>>, max: usize) -> BVHNode<'object, 'material> {
+fn generate_bvh_node_spatial_median<'material>(elements: &Vec<IVolPair<'material>>, max: usize) -> BVHNode<'material> {
   let bounds = BoundingVolume::from(&(elements.iter().map(|(_, bv)| bv).collect()));
   if elements.len() <= max {
-    let children: Vec<&'object dyn RTXIntersectable<'material>> = elements.iter().map(|(e, _)| *e).collect();
+    let children: Vec<Arc<(dyn RTXIntersectable<'material> + Send + Sync)>> = elements.iter().map(|(e, _)| Arc::clone(e)).collect();
     return BVHNode::new_leaf(children, bounds);
   }
 
@@ -227,13 +228,13 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
     // println!("Splitting along X-Axis");
     // split along x-axis
     let x_split = axis_sizes.x / 2.0 + bounds.min.x;
-    let children_smaller: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_smaller: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().x <= x_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
-    let children_larger: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_larger: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().x > x_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
     
     // println!("Got {} smaller and {} larger elements", children_smaller.len(), children_larger.len());
@@ -246,14 +247,14 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
     // println!("Splitting along Y-Axis");
     // split along y-axis
     let y_split = axis_sizes.y / 2.0 + bounds.min.y;
-    let children_smaller: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_smaller: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().y <= y_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
 
-    let children_larger: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_larger: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().y > y_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
 
     // println!("Got {} smaller and {} larger elements", children_smaller.len(), children_larger.len());
@@ -266,13 +267,13 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
     // println!("Splitting along Z-Axis");
     // split along Z-axis
     let z_split = axis_sizes.z / 2.0 + bounds.min.z;
-    let children_smaller: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_smaller: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().z <= z_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
-    let children_larger: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter()
+    let children_larger: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter()
       .filter(|(e, _)| e.get_position().z > z_split)
-      .map(|(e, bv)| (*e, *bv))
+      .map(|(e, bv)| (Arc::clone(e), *bv))
       .collect();
 
     // println!("Got {} smaller and {} larger elements", children_smaller.len(), children_larger.len());
@@ -285,26 +286,32 @@ fn generate_bvh_node_spatial_median<'object, 'material>(elements: &Vec<IVolPair<
 }
 
 
-fn split_by_axis<'object, 'material>(elements: &[IVolPair<'object, 'material>], axis_index: usize) -> (Vec<IVolPair<'object, 'material>>, Vec<IVolPair<'object, 'material>>) {
+fn split_by_axis<'material>(elements: &[IVolPair<'material>], axis_index: usize) -> (Vec<IVolPair<'material>>, Vec<IVolPair<'material>>) {
   assert!(axis_index < 3);
   
-  let mut sorted_elements: Vec<(&'object dyn RTXIntersectable<'material>, BoundingVolume)> = elements.iter().copied().collect();
+  let mut sorted_elements: Vec<(Arc<(dyn RTXIntersectable<'material> + Send + Sync)>, BoundingVolume)> = elements.iter().map(| (e, bv) | (Arc::clone(e), bv.clone()) ).collect();
   sorted_elements.sort_by(|(a, _), (b, _)| {
     a.get_position()[axis_index].partial_cmp(&(b.get_position()[axis_index])).unwrap()
   });
 
   let n = elements.len() / 2;
-  let subarray_a: Vec<IVolPair<'object, 'material>> = sorted_elements[0..n].iter().copied().collect();
-  let subarray_b: Vec<IVolPair<'object, 'material>> = sorted_elements[n..].iter().copied().collect();
+  let subarray_a: Vec<IVolPair<'material>> = sorted_elements[0..n]
+    .iter()
+    .map(| (e, bv) | (Arc::clone(e), bv.clone()) )
+    .collect();
+  let subarray_b: Vec<IVolPair<'material>> = sorted_elements[n..]
+    .iter()
+    .map(| (e, bv) | (Arc::clone(e), bv.clone()) )
+    .collect();
 
   // println!("subarray sizes: {},{} | {}", subarray_a.len(), subarray_b.len(), elements.len());
   (subarray_a, subarray_b)
 }
 
-fn generate_bvh_node_object_median<'object, 'material>(elements: &[IVolPair<'object, 'material>], max: usize) -> BVHNode<'object, 'material> {
+fn generate_bvh_node_object_median<'material>(elements: &[IVolPair<'material>], max: usize) -> BVHNode<'material> {
   let bounds = BoundingVolume::from(&(elements.iter().map(|(_, bv)| bv).collect()));
   if elements.len() <= max {
-    let children: Vec<Intersectable<'object, 'material>> = elements.iter().map(|(e, _)| *e).collect();
+    let children: Vec<Intersectable<'material>> = elements.iter().map(|(e, _)| Arc::clone(e)).collect();
     return BVHNode::new_leaf(children, bounds);
   }
 
@@ -328,12 +335,12 @@ fn generate_bvh_node_object_median<'object, 'material>(elements: &[IVolPair<'obj
 }
 
 
-pub fn generate_bvh<'object, 'material>(scene: &Scene<'object, 'material>, use_object_median: bool) -> BVHNode<'object, 'material> {
+pub fn generate_bvh<'object, 'material>(scene: &Scene<'material>, use_object_median: bool) -> BVHNode<'material> {
   // For each object in the scene, generate and temporarily store a bounding volume:
-  let pairs: Vec<IVolPair<'object, 'material>> = scene
+  let pairs: Vec<IVolPair<'material>> = scene
     .all_elements()
     .iter()
-    .map(|e| { (*e, e.get_bounding_volume()) })
+    .map(|e| { (Arc::clone(e), e.get_bounding_volume()) })
     .collect();
     if use_object_median {
       generate_bvh_node_object_median(&pairs, 3)
