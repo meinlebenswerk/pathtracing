@@ -1,4 +1,4 @@
-use crate::{objects::triangle::Triangle, geometry::vector::Vector3f};
+use crate::{objects::triangle::Triangle, geometry::vector3::Vector3f};
 
 
 pub fn triangulate_square(points: &[Vector3f]) -> Vec<Triangle> {

@@ -44,7 +44,7 @@ impl<'material> Scene<'material> {
   }
 
   #[allow(dead_code)]
-  pub fn get_random_light(&self, context: &mut RTXContext, rng: &mut dyn PRNG) -> Arc<dyn RTXIntersectable<'material>  + Send + Sync> {
+  pub fn get_random_light(&self, _context: &mut RTXContext, rng: &mut dyn PRNG) -> Arc<dyn RTXIntersectable<'material>  + Send + Sync> {
     let index = ((self.lights.len() - 1) as f32 * rng.next_f32()) as usize;
     Arc::clone(&self.lights[index])
   }

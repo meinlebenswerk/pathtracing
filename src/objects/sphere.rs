@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::random_vector_on_sphere;
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::prng::PRNG;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::material::{ RTXMaterial };
@@ -82,12 +82,12 @@ impl<'material> RTXIntersectable<'material> for Sphere {
 
   fn get_bounding_volume(&self) -> BoundingVolume {
     let offset = Vector3f::new(self.radius, self.radius, self.radius);
-    let min = (self.center - offset).as_Point3();
+    let min = (self.center - offset).as_point3();
     let max = self.center + offset;
     BoundingVolume::new(min, max)
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
+  fn random_point_on_surface(&self, _context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
     // Project the sphere onto the Plane
     // But that's complicated.
 

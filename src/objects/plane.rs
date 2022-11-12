@@ -1,4 +1,4 @@
-use crate::{material::RTXMaterial, geometry::vector::Vector3f};
+use crate::{material::RTXMaterial, geometry::vector3::Vector3f};
 
 #[allow(dead_code)]
 pub struct Plane<'material> {

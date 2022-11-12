@@ -1,5 +1,5 @@
 use std::{fmt, sync::Arc};
-use crate::{material::{ RTXMaterial }, geometry::vector::Vector3f};
+use crate::{material::{ RTXMaterial }, geometry::vector3::Vector3f};
 
 use super::point::Point3f;
 

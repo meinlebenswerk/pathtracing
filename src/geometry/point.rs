@@ -12,7 +12,7 @@ use crate::config::RaytracerFloat;
 use crate::config::RaytracerInt;
 
 use super::utils::MinMax;
-use super::vector::Vector3;
+use super::vector3::Vector3;
 
 #[derive(Copy, Clone)]
 pub struct Point3<T: Copy + Clone> {
@@ -39,7 +39,7 @@ impl<T> Point3<T>
     )
   }
 
-  pub fn as_Vector3(&self) -> Vector3<T> {
+  pub fn as_vector3(&self) -> Vector3<T> {
     Vector3::new(self.x, self.y, self.z)
   }
 }
@@ -178,12 +178,13 @@ impl<T: Copy + Clone + Signed + MinMax + Zero> Default for Point3<T> {
 
 
 #[derive(Clone, Copy)]
-pub struct Point2<T: Copy + Clone + Signed + MinMax> {
-  x: T,
-  y: T
+#[allow(dead_code)]
+pub struct Point2<T: Copy + Clone> {
+  pub x: T,
+  pub y: T
 }
 
-impl<T: Copy + Clone + Signed + MinMax> Point2<T> {
+impl<T: Copy + Clone> Point2<T> {
   #[allow(dead_code)]
   pub fn new(x: T, y: T) -> Self {
     Self {

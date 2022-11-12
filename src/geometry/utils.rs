@@ -1,6 +1,6 @@
 use crate::prng::PRNG;
 
-use super::{vector::Vector3f, point::Point3f};
+use super::{vector3::Vector3f, point::Point3f};
 
 // Vector utils
 

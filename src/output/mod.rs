@@ -1,4 +1,4 @@
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 
 pub mod reinhard_devlin;
 pub mod filmic;

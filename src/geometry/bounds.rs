@@ -1,17 +1,22 @@
-use super::vector::Vector3f;
+use super::point::{ Point2f, Point3f, Point2i, Point3i };
 
 #[allow(dead_code)]
-pub struct Bounds3 {
-  pub min: Vector3f,
-  pub max: Vector3f
+pub struct Bounds<T> {
+  pub min: T,
+  pub max: T
 }
 
 #[allow(dead_code)]
-impl Bounds3 {
-  pub fn new(min: Vector3f, max: Vector3f) -> Self {
+impl<T> Bounds<T> {
+  pub fn new(min: T, max: T) -> Self {
     Self {
       min,
       max
     }
   }
 }
+
+pub type Bounds2f = Bounds<Point2f>;
+pub type Bounds3f = Bounds<Point3f>;
+pub type Bounds2i = Bounds<Point2i>;
+pub type Bounds3i = Bounds<Point3i>;

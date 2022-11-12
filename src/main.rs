@@ -3,7 +3,6 @@ extern crate exr;
 mod ppm;
 mod rtx_traits;
 mod scene;
-mod camera;
 mod stl;
 mod utils;
 mod scenes;
@@ -12,6 +11,14 @@ mod bvh;
 mod objects;
 mod material;
 mod math;
+
+mod camera;
+mod primitive;
+mod integrator;
+mod sampler;
+mod threading;
+mod spectrum;
+mod film;
 
 mod output;
 mod rtcore;
@@ -23,7 +30,7 @@ mod cli;
 
 use bvh::generate_bvh;
 use cli::process_cli_args;
-use geometry::{vector::Vector3f, point::Point3f};
+use geometry::{vector3::Vector3f, point::Point3f};
 use material::{ DiffuseMaterial, EmissiveMaterial, RTXMaterial };
 use scene::{ Scene, RTXContext };
 use camera::Camera;
@@ -41,7 +48,7 @@ use prng::{ mt19937::Mt19937Prng, PRNG };
 
 use rtcore::weekend::ray_color_weekend;
 
-use crate::{output::filmic::tonemap_filmic, ppm::dump_ppm_raw};
+use crate::{output::filmic::tonemap_filmic, ppm::dump_ppm_raw, film::Film};
 
 #[derive(Copy, Clone)]
 struct RenderConfig {
@@ -103,15 +110,16 @@ fn main() -> std::io::Result<()> {
 
     let aspect_ratio = (image_width as f32) / (image_height as f32);
 
-    // Framebuffer
-    let mut framebuffer = vec![Vector3f::default(); image_height * image_width];
+    // Camera + Film
+    let mut film: Film = Film::new(image_width, image_height, 50.0);
 
     let camera = Arc::new(Camera::new(
         Point3f::new(0.0, 0.0, -1.5), 
         Point3f::new(0.0, 0.0, 0.0),  
         Vector3f::new(0.0, 1.0, 0.0), 
         75.0, 
-        aspect_ratio
+        aspect_ratio,
+        film
     ));
 
     let mut scene = Scene::new();

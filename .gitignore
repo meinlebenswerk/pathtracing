@@ -15,6 +15,9 @@
 *.stl
 /models
 
+# PRBT scenes
+pbrt-v3-scenes
+
 # Notes
 *.txt
 

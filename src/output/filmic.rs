@@ -1,6 +1,6 @@
 // https://64.github.io/tonemapping/#filmic-tone-mapping-operators
 
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 
 use super::{
     QuantisedColor
@@ -9,17 +9,17 @@ use super::{
 
 fn uncharted2_tonemap_partial(color: &Vector3f) -> Vector3f {
     let output = color.clone();
-    let A = 0.15;
-    let B = 0.50;
-    let C = 0.10;
-    let D = 0.20;
-    let E = 0.02;
-    let F = 0.30;
+    let a = 0.15;
+    let b = 0.50;
+    let c = 0.10;
+    let d = 0.20;
+    let e = 0.02;
+    let f = 0.30;
     
-    let tmp0 = output*(A*output+C*B)+D*E;
-    let tmp1 = output*(A*output+B)+D*F;
+    let tmp0 = output*(a*output+c*b)+d*e;
+    let tmp1 = output*(a*output+b)+d*f;
 
-    let tmp2 = E/F;
+    let tmp2 = e/f;
 
     Vector3f::new(
         tmp0.x / tmp1.x - tmp2,
@@ -32,8 +32,8 @@ fn uncharted2_filmic(v: &Vector3f) -> Vector3f {
     let exposure_bias = 2.0;
     let curr = uncharted2_tonemap_partial(&(v * exposure_bias));
 
-    let W = Vector3f::new(11.2, 11.2, 11.2);
-    let tmp0 = uncharted2_tonemap_partial(&W);
+    let w = Vector3f::new(11.2, 11.2, 11.2);
+    let tmp0 = uncharted2_tonemap_partial(&w);
     let white_scale = Vector3f::new(
         1.0/tmp0.x,
         1.0/tmp0.y,

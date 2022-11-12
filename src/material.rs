@@ -1,7 +1,7 @@
 
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::{random_vector, reflect_vector, random_vector_in_unit_sphere, refract_vector, generate_orthonormal_system};
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::prng::PRNG;
 use crate::scene::{ RTXContext };
 
@@ -45,7 +45,7 @@ impl DiffuseMaterial {
 }
 
 impl RTXMaterial for DiffuseMaterial {
-  fn scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     // We could influence the scatter direction in the direction of a random light...
     // let light_position = context.scene.get_random_light(context).get_position();
     // let light_direction = light_position -  record.point;
@@ -75,7 +75,7 @@ impl RTXMaterial for DiffuseMaterial {
     true
   }
 
-  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let sampled_direction = hemisphere(rng.next_f32(), rng.next_f32());
 
     // Now comes some black-magic I don't understand
@@ -116,7 +116,7 @@ impl MetalMaterial {
 }
 
 impl RTXMaterial for MetalMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let reflected = reflect_vector(&ray.direction, &record.normal);
     let direction = reflected + self.roughness * random_vector_in_unit_sphere(rng);
     *next_ray = Ray::new(record.point, direction);
@@ -124,7 +124,7 @@ impl RTXMaterial for MetalMaterial {
     next_ray.direction.dot(&record.normal) > 0.0
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let sampled_direction = hemisphere(rng.next_f32(), rng.next_f32());
 
     // Now comes some black-magic I don't understand
@@ -179,7 +179,7 @@ impl DielectricMaterial {
 }
 
 impl RTXMaterial for DielectricMaterial {
-  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let refraction_ratio = if record.front_face { 1.0/self.ior } else { self.ior };
 
     let cos_theta = f32::min((-ray.direction).dot(&record.normal), 1.0);
@@ -202,7 +202,7 @@ impl RTXMaterial for DielectricMaterial {
     true
   }
 
-  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let mut normal = record.normal.clone();
     let mut ior = 1.0 / self.ior;
 
@@ -253,7 +253,7 @@ impl NormalMaterial {
 }
 
 impl RTXMaterial for NormalMaterial {
-  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     // let normal = if record.front_face { record.normal } else { -record.normal };
     let normal = record.normal;
     *attenutation = (normal + 1.0) / 2.0;
@@ -262,7 +262,7 @@ impl RTXMaterial for NormalMaterial {
     false
   }
 
-  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     // This behaves just like a diffuse material :)
     let sampled_direction = hemisphere(rng.next_f32(), rng.next_f32());
 
@@ -313,13 +313,13 @@ impl EmissiveMaterial {
 }
 
 impl RTXMaterial for EmissiveMaterial {
-  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     *attenutation = self.albedo * self.intensity;
     false
   }
 
   // Also just use the diffuse scatter
-  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, _ray: &Ray, next_ray: &mut Ray, attenuation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let sampled_direction = hemisphere(rng.next_f32(), rng.next_f32());
 
     // Now comes some black-magic I don't understand
@@ -362,13 +362,13 @@ impl WorldMaterial {
 }
 
 impl RTXMaterial for WorldMaterial {
-  fn scatter(&self, ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn scatter(&self, ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     let t = 0.5 * (ray.direction.y + 1.0 );
     *attenutation = (1.0 - t) * self.albedo_bottom + t * self.albedo_top;
     false
   }
 
-  fn just_scatter(&self, _ray: &Ray, _next_ray: &mut Ray, _attenuation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
+  fn just_scatter(&self, _ray: &Ray, _next_ray: &mut Ray, _attenuation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     false
   }
 

@@ -1,5 +1,5 @@
 use crate::geometry::point::Point3f;
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::material::RTXMaterial;
 use crate::objects::mesh::Mesh;
 use crate::objects::triangle::Triangle;

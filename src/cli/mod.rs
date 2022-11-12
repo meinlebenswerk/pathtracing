@@ -13,7 +13,7 @@ pub struct RTArguments {
 impl Default for RTArguments {
   fn default() -> Self {
       Self {
-        spp: 256,
+        spp: 64,
         bounce_depth: 32,
         image_height: 512,
         image_width: 528

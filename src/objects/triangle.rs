@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::{HitRecord, Ray};
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::material::RTXMaterial;
 use crate::prng::PRNG;
 use crate::rtx_traits::RTXIntersectable;
@@ -33,7 +33,7 @@ impl Triangle {
       points: [ a, b, c ],
       normal,
       material: None,
-      center: center.as_Point3(),
+      center: center.as_point3(),
       edge10: v0v1,
       edge20: v0v2
     }
@@ -54,7 +54,7 @@ impl Triangle {
     if f32::abs(a) < eps { return false; }
 
     let f = 1.0 / a;
-    let s = ray.origin.as_Vector3() - vertex0;
+    let s = ray.origin.as_vector3() - vertex0;
     let u = f * s.dot(&h);
     if u < 0.0 || u > 1.0 { return false; }
 
@@ -113,10 +113,10 @@ impl<'material> RTXIntersectable<'material> for Triangle {
   fn get_bounding_volume(&self) -> BoundingVolume {
       let min = Vector3f::min_elementwise(&Vector3f::min_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
       let max = Vector3f::max_elementwise(&Vector3f::max_elementwise(&self.points[0], &self.points[1]), &self.points[2]);
-      BoundingVolume::new(min.as_Point3(), max.as_Point3())
+      BoundingVolume::new(min.as_point3(), max.as_point3())
   }
 
-  fn random_point_on_surface(&self, context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
+  fn random_point_on_surface(&self, _context: &mut RTXContext, rng: &mut dyn PRNG) -> Point3f {
     let mut a = rng.next_f32();
     let mut b = rng.next_f32();
     if a+b >= 1.0 {
@@ -124,6 +124,6 @@ impl<'material> RTXIntersectable<'material> for Triangle {
       b = 1.0 - b;
     }
 
-    (self.points[0] + a * self.edge10 + b * self.edge20).as_Point3()
+    (self.points[0] + a * self.edge10 + b * self.edge20).as_point3()
   }
 }

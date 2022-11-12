@@ -1,7 +1,7 @@
 use crate::geometry::point::Point3f;
 use crate::geometry::ray::Ray;
 use crate::geometry::utils::MinMax;
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::rtx_traits::{ RTXIntersectable };
 use crate::scene::{ Scene };
 use std::fmt;

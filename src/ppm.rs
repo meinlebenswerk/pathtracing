@@ -2,7 +2,7 @@
 use std::fs::File;
 use std::io::prelude::*;
 
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 use crate::output::QuantisedColor;
 
 fn clamp(val: f32, min: f32, max: f32) -> f32 {

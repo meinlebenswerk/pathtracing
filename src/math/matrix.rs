@@ -2,7 +2,7 @@ use std::{ops, fmt};
 
 use float_cmp::approx_eq;
 
-use crate::geometry::vector::Vector3f;
+use crate::geometry::vector3::Vector3f;
 
 
 #[derive(Clone)]
