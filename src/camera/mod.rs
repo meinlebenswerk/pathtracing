@@ -1,4 +1,4 @@
-use crate::{geometry::{ vector3::Vector3f, ray::Ray, point::Point3f }, film::Film, config::RaytracerFloat};
+use crate::{geometry::{ vector3::Vector3f, ray::Ray, point3::Point3f }, film::Film, config::RaytracerFloat};
 
 
 pub struct Camera {
@@ -14,7 +14,7 @@ impl Camera {
 
     let theta = vfov/180.0 * std::f32::consts::PI;
     let height = f32::tan(theta/2.0);
-    let width = aspect_ratio * height;
+    // let width = aspect_ratio * height;
 
     // camera "normal" vector, in view direction
     let w = (look_at - position).normalize();
@@ -45,7 +45,7 @@ impl Camera {
     let x = (u - 0.5) * 2.0;
     let y = (v - 0.5) * 2.0;
 
-    let direction = (x * self.u * (self.film.resolution.x as RaytracerFloat)) + (y * self.v * (self.film.resolution.y as RaytracerFloat)) + self.w;
+    let direction = (self.u * x * (self.film.resolution.x as RaytracerFloat)) + (self.v * y * (self.film.resolution.y as RaytracerFloat)) + self.w;
     Ray::new(self.position, direction)
   }
 }

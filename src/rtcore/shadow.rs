@@ -1,4 +1,4 @@
-use crate::geometry::point::Point3f;
+use crate::geometry::point3::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::vector3::Vector3f;
 use crate::prng::PRNG;
@@ -44,6 +44,6 @@ pub fn trace(ray: &Ray, depth: usize, context: &mut RTXContext, color: &mut Vect
       // Process the next ray :)
       let mut tmp_color = Vector3f::default();
       trace(&next_ray, depth + 1, context, &mut tmp_color, rng);
-      *color += tmp_color * attenuation * rr_factor;
+      *color += tmp_color.mul_elementwise(&attenuation) * rr_factor;
     }
 }

@@ -1,6 +1,10 @@
-use crate::prng::PRNG;
+use std::ops::{Mul, Add, Sub};
 
-use super::{vector3::Vector3f, point::Point3f};
+use num::One;
+
+use crate::{prng::PRNG};
+
+use super::{vector3::Vector3f, point3::{Point3f, Point3}};
 
 // Vector utils
 
@@ -62,51 +66,43 @@ pub fn random_vector_in_unit_sphere(prng: &mut dyn PRNG) -> Vector3f {
 
 // Math / typing utils
 pub trait MinMax {
-  fn min(a: &Self, b: &Self) -> Self; 
-  fn max(a: &Self, b: &Self) -> Self;
+  fn min(&self, b: &Self) -> Self; 
+  fn max(&self, b: &Self) -> Self;
 }
 
-impl MinMax for f32 {
-  fn min(a: &Self, b: &Self) -> Self {
-    if a > b { *b } else { *a }
+impl<T> MinMax for T
+where T: PartialOrd +  Copy {
+  fn min(&self, b: &Self) -> Self {
+    if self > b { *b } else { *self }
   }
-  fn max(a: &Self, b: &Self) -> Self {
-    if a > b { *a } else { *b }
-  }
-}
-
-impl MinMax for f64 {
-  fn min(a: &Self, b: &Self) -> Self {
-    if a > b { *b } else { *a }
-  }
-  fn max(a: &Self, b: &Self) -> Self {
-    if a > b { *a } else { *b }
+  fn max(&self, b: &Self) -> Self {
+    if self > b { *self } else { *b }
   }
 }
 
-impl MinMax for i32 {
-  fn min(a: &Self, b: &Self) -> Self {
-    if a > b { *b } else { *a }
+impl<T> MinMax for Point3<T>
+where T: MinMax {
+  fn max(&self, b: &Self) -> Self {
+      Self {
+        x: T::max(&self.x, &b.x),
+        y: T::max(&self.y, &b.y),
+        z: T::max(&self.z, &b.z),
+      }
   }
-  fn max(a: &Self, b: &Self) -> Self {
-    if a > b { *a } else { *b }
-  }
+  fn min(&self, b: &Self) -> Self {
+    Self {
+      x: T::min(&self.x, &b.x),
+      y: T::min(&self.y, &b.y),
+      z: T::min(&self.z, &b.z),
+    }
 }
-
-impl MinMax for i64 {
-  fn min(a: &Self, b: &Self) -> Self {
-    if a > b { *b } else { *a }
-  }
-  fn max(a: &Self, b: &Self) -> Self {
-    if a > b { *a } else { *b }
-  }
 }
 
 
 
 //  TODO: Move them somewhere else.
 pub fn reflect_vector(v: &Vector3f, n: &Vector3f) -> Vector3f {
-  *v - 2.0 * v.dot(n) * *n
+  *v - *n * 2.0 * v.dot(n)
 }
 
 pub fn refract_vector(incident: &Vector3f, normal: &Vector3f, refraction_ratio: f32) -> Vector3f {
@@ -118,8 +114,8 @@ pub fn refract_vector(incident: &Vector3f, normal: &Vector3f, refraction_ratio: 
   let sin2_theta_t = (refraction_ratio * refraction_ratio) * (1.0 - cos_theta_i*cos_theta_i);
 
   // for refraction_ratio > 1 -> then total internal reflection, handled outside this function
-  let t_incident = refraction_ratio * (*incident);
-  let t_normal = (refraction_ratio * cos_theta_i - f32::sqrt(1.0 - sin2_theta_t)) * (*normal);
+  let t_incident = *incident * refraction_ratio;
+  let t_normal = (*normal) * (refraction_ratio * cos_theta_i - f32::sqrt(1.0 - sin2_theta_t));
   t_incident + t_normal
 }
 
@@ -142,17 +138,26 @@ pub fn generate_orthonormal_system(v: &Vector3f) -> [Vector3f; 3] {
 }
 
 // Point Utils
-#[allow(dead_code)]
 pub fn distance(p1: &Point3f, p2: &Point3f) -> f32 {
-  (p1 - p2).length()
+  (*p1 - *p2).length()
 }
 
-#[allow(dead_code)]
 pub fn distance_squared(p1: &Point3f, p2: &Point3f) -> f32 {
-  (p1 - p2).length_squared()
+  (*p1 - *p2).length_squared()
 }
 
-#[allow(dead_code)]
 pub fn lerp(t:f32, a: &Point3f, b: &Point3f) -> Point3f {
-  (1.0 - t) * a + t * b
+  *a * (1.0 - t) + *b * t
+}
+
+
+pub trait Lerp<T> {
+  fn lerp(t: T, a: &Self, b: &Self) -> Self;
+}
+
+impl<IT, T> Lerp<IT> for T
+where T: Mul<IT, Output = T> + Add<T, Output = T> + Copy, IT: One + Sub<IT, Output = IT> + Copy {
+  fn lerp(t: IT, a: &Self, b: &Self) -> Self {
+      *a * (IT::one() - t) + *b * t 
+  }
 }

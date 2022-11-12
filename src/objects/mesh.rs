@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{material::{ RTXMaterial }, geometry::{point::Point3f}};
+use crate::{material::{ RTXMaterial }, geometry::{point3::Point3f}};
 
 use super::triangle::Triangle;
 
@@ -15,7 +15,7 @@ impl Mesh {
     // calculate current center
     // I think just adding up all elements should work.
     let world_center = Point3f::default();
-    let offset = &center - &world_center;
+    let offset = center - world_center;
 
     Self {
       center,

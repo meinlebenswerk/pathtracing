@@ -1,4 +1,4 @@
-use crate::geometry::point::Point3f;
+use crate::geometry::point3::Point3f;
 use crate::geometry::ray::Ray;
 use crate::geometry::utils::MinMax;
 use crate::geometry::vector3::Vector3f;

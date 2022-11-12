@@ -1,10 +1,10 @@
 use std::{fmt, ops::{Add, AddAssign, Sub, SubAssign, Mul, MulAssign, Div, DivAssign, Neg}};
 
-use num::{Float, Zero};
+use num::{Float, Zero, One};
 
 use crate::config::{RaytracerFloat, RaytracerInt};
 
-use super::point::{Point2, Point3};
+use super::{point3::{Point3}, point2::Point2};
 
 #[derive(Clone, Copy)]
 pub struct Vector2<T> {
@@ -21,14 +21,17 @@ impl<T> Vector2<T> {
   }
 }
 
+impl<T> Vector2<T> 
+where T: Mul<T, Output = T> + Add<T, Output = T> + Copy {
+  pub fn length_squared(&self) -> T {
+    self.x*self.x + self.y*self.y
+  }
+}
+
 impl<T> Vector2<T>
   where T: Float {
     pub fn has_nans(&self) -> bool {
       self.x.is_nan() || self.y.is_nan()
-    }
-
-    pub fn length_squared(&self) -> T {
-      self.x*self.x + self.y*self.y
     }
 
     pub fn length(&self) -> T {
@@ -97,12 +100,12 @@ impl<T> PartialEq<Vector2<T>> for Vector2<T>
     }
 
     fn ne(&self, other: &Vector2<T>) -> bool {
-      self.x != other.x || self.x != other.y
+      self.x != other.x || self.y != other.y
     }
   }
 
 impl<T> Mul<T> for Vector2<T>
-  where T: Mul<T, Output = T> {
+  where T: Mul<T, Output = T> + Copy {
     type Output = Vector2<T>;
     fn mul(self, rhs: T) -> Self::Output {
         Self::Output::new(
@@ -113,29 +116,31 @@ impl<T> Mul<T> for Vector2<T>
 }
 
 impl<T> MulAssign<T> for Vector2<T>
-  where T: MulAssign<T> {
+  where T: MulAssign<T> + Copy {
     fn mul_assign(&mut self, rhs: T) {
-      self.y *= rhs;
       self.x *= rhs;
+      self.y *= rhs;
     }
 }
 
 impl<T> Div<T> for Vector2<T>
-  where T: Div<T, Output = T> {
+  where T: Div<T, Output = T> + One + Copy {
     type Output = Vector2<T>;
     fn div(self, rhs: T) -> Self::Output {
-        Self::Output::new(
-          self.x / rhs,
-          self.y / rhs
-        )
+      let inv = T::one() / rhs;
+      Self::Output::new(
+        self.x * inv,
+        self.y * inv
+      )
     }
 }
 
 impl<T> DivAssign<T> for Vector2<T>
-  where T: DivAssign<T> {
+  where T: Div<T, Output = T> + One + MulAssign<T> + Copy {
     fn div_assign(&mut self, rhs: T) {
-      self.y /= rhs;
-      self.x /= rhs;
+      let inv = T::one() / rhs;
+      self.x *= inv;
+      self.y *= inv;
     }
 }
 

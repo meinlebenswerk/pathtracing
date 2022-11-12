@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::geometry::point::Point3f;
+use crate::geometry::point3::Point3f;
 use crate::geometry::ray::{ Ray, HitRecord };
 use crate::material::RTXMaterial;
 use crate::bvh::BoundingVolume;

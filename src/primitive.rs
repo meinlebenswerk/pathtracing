@@ -1,4 +1,4 @@
-use crate::{geometry::{point::{Point3, Point3f, Point2f}, ray::{Ray, HitRecord}, vector3::{Vector3f, Normal3f}}, config::RaytracerFloat};
+use crate::{geometry::{point3::{Point3, Point3f}, ray::{Ray, HitRecord}, vector3::{Vector3f, Normal3f}, point2::Point2f}, config::RaytracerFloat};
 
 
 #[derive(Copy, Clone)]

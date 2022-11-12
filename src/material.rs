@@ -1,6 +1,6 @@
 
 use crate::geometry::ray::{Ray, HitRecord};
-use crate::geometry::utils::{random_vector, reflect_vector, random_vector_in_unit_sphere, refract_vector, generate_orthonormal_system};
+use crate::geometry::utils::{random_vector, reflect_vector, random_vector_in_unit_sphere, refract_vector, generate_orthonormal_system, Lerp};
 use crate::geometry::vector3::Vector3f;
 use crate::prng::PRNG;
 use crate::scene::{ RTXContext };
@@ -118,7 +118,7 @@ impl MetalMaterial {
 impl RTXMaterial for MetalMaterial {
   fn scatter(&self, ray: &Ray, next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, rng: &mut dyn PRNG) -> bool {
     let reflected = reflect_vector(&ray.direction, &record.normal);
-    let direction = reflected + self.roughness * random_vector_in_unit_sphere(rng);
+    let direction = reflected + random_vector_in_unit_sphere(rng) * self.roughness;
     *next_ray = Ray::new(record.point, direction);
     *attenutation = self.albedo;
     next_ray.direction.dot(&record.normal) > 0.0
@@ -140,7 +140,7 @@ impl RTXMaterial for MetalMaterial {
     let direction_metallic = ray.direction - record.normal*(cost_metallic*2.0);
 
     // Interpolate between the two
-    let direction = self.roughness * direction_diffuse * (1.0 - self.roughness) * direction_metallic.normalize() ;
+    let direction = Vector3f::lerp(self.roughness, &direction_metallic.normalize(), &direction_diffuse);
     *next_ray = Ray::new(record.point, direction);
     
     // Metallic BRDF
@@ -256,7 +256,7 @@ impl RTXMaterial for NormalMaterial {
   fn scatter(&self, _ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     // let normal = if record.front_face { record.normal } else { -record.normal };
     let normal = record.normal;
-    *attenutation = (normal + 1.0) / 2.0;
+    *attenutation = (normal + Vector3f::new(1.0, 1.0, 1.0)) / 2.0;
     // *attenutation = record.normal;
     // *attenutation = Vector3f::new(1.0, 1.0, 1.0);
     false
@@ -285,7 +285,7 @@ impl RTXMaterial for NormalMaterial {
   fn is_emissive(&self) -> bool { true }
   fn counts_as_light(&self) -> bool { true }
   fn emission_at(&self, _ray: &Ray, record: &HitRecord) -> Vector3f { 
-    (record.normal + 1.0) / 2.0
+    (record.normal + (1.0).into()) / 2.0
   }
 }
 
@@ -364,7 +364,7 @@ impl WorldMaterial {
 impl RTXMaterial for WorldMaterial {
   fn scatter(&self, ray: &Ray, _next_ray: &mut Ray, attenutation: &mut Vector3f, _record: &HitRecord, _context: &RTXContext, _rng: &mut dyn PRNG) -> bool {
     let t = 0.5 * (ray.direction.y + 1.0 );
-    *attenutation = (1.0 - t) * self.albedo_bottom + t * self.albedo_top;
+    *attenutation = Vector3f::lerp(t, &self.albedo_bottom, &self.albedo_top);
     false
   }
 
@@ -376,7 +376,7 @@ impl RTXMaterial for WorldMaterial {
   fn counts_as_light(&self) -> bool { false }
   fn emission_at(&self, ray: &Ray, _record: &HitRecord) -> Vector3f { 
     let t = 0.5 * (ray.direction.y + 1.0 );
-    (1.0 - t) * self.albedo_bottom + t * self.albedo_top
+    Vector3f::lerp(t, &self.albedo_bottom, &self.albedo_top)
   }
 }
 

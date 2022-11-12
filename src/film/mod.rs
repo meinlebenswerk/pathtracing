@@ -1,4 +1,4 @@
-use crate::{geometry::{point::{Point2, Point2f}, bounds::{Bounds2f, Bounds2i}}, config::RaytracerFloat};
+use crate::{geometry::{bounds2::{Bounds2f, Bounds2i}, point2::{Point2, Point2f}}, config::RaytracerFloat};
 
 
 #[derive(Copy, Clone)]
@@ -36,7 +36,7 @@ impl Film {
         let aspect = (self.resolution.y as RaytracerFloat) / (self.resolution.x as RaytracerFloat);
         let x= ((self.diagonal*self.diagonal)/(1.0 + aspect*aspect)).sqrt();
         let y = aspect * x;
-        Bounds2f::new(Point2f::new(-x/2.0, -y/2.0), Point2f::new(x/2.0, y/2.0))
+        Bounds2f::new(&Point2f::new(-x/2.0, -y/2.0), &Point2f::new(x/2.0, y/2.0))
     }
 
     pub fn get_image_tile(&self) {

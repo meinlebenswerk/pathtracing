@@ -16,8 +16,8 @@ fn uncharted2_tonemap_partial(color: &Vector3f) -> Vector3f {
     let e = 0.02;
     let f = 0.30;
     
-    let tmp0 = output*(a*output+c*b)+d*e;
-    let tmp1 = output*(a*output+b)+d*f;
+    let tmp0 = output.mul_elementwise(&((output * a) + Vector3f::new(c*b, c*b, c*b))) + Vector3f::new(d*e, d*e, d*e);
+    let tmp1 = output.mul_elementwise(&((output)*a + Vector3f::new(b, b, b))) + Vector3f::new(d*f, d*f, d*f);
 
     let tmp2 = e/f;
 
@@ -30,7 +30,7 @@ fn uncharted2_tonemap_partial(color: &Vector3f) -> Vector3f {
 
 fn uncharted2_filmic(v: &Vector3f) -> Vector3f {
     let exposure_bias = 2.0;
-    let curr = uncharted2_tonemap_partial(&(v * exposure_bias));
+    let curr = uncharted2_tonemap_partial(&(*v * exposure_bias));
 
     let w = Vector3f::new(11.2, 11.2, 11.2);
     let tmp0 = uncharted2_tonemap_partial(&w);
@@ -39,7 +39,7 @@ fn uncharted2_filmic(v: &Vector3f) -> Vector3f {
         1.0/tmp0.y,
         1.0/tmp0.z
     );
-    return curr * white_scale;
+    return curr.mul_elementwise(&white_scale);
 }
 
 #[allow(unused)]

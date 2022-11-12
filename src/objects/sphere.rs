@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::geometry::point::Point3f;
+use crate::geometry::point3::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::utils::random_vector_on_sphere;
 use crate::geometry::vector3::Vector3f;
@@ -82,7 +82,7 @@ impl<'material> RTXIntersectable<'material> for Sphere {
 
   fn get_bounding_volume(&self) -> BoundingVolume {
     let offset = Vector3f::new(self.radius, self.radius, self.radius);
-    let min = (self.center - offset).as_point3();
+    let min = self.center - offset;
     let max = self.center + offset;
     BoundingVolume::new(min, max)
   }

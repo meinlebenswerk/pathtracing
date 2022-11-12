@@ -1,18 +1,19 @@
 use std::{fmt, sync::Arc};
-use crate::{material::{ RTXMaterial }, geometry::vector3::Vector3f};
+use crate::{material::{ RTXMaterial }, geometry::vector3::Vector3f, config::RaytracerFloat};
 
-use super::point::Point3f;
+use super::point3::Point3f;
 
 #[derive(Copy, Clone)]
 pub struct Ray {
   pub origin: Point3f,
   pub direction: Vector3f,
-  pub current_ior: f32,
-  pub inv_direction: Vector3f
+  current_ior: RaytracerFloat,
+  pub inv_direction: Vector3f,
 
   // Medium
   // time
-  // tMax
+  pub time: RaytracerFloat,
+  pub t_max: RaytracerFloat
 }
 
 impl Ray {
@@ -23,9 +24,15 @@ impl Ray {
     Self {
       origin,
       direction: dir,
-      inv_direction: 1.0 / dir,
-      current_ior: 1.0
+      inv_direction: direction.inverse(),
+      current_ior: 1.0,
+      t_max: RaytracerFloat::INFINITY,
+      time: 0.0
     }
+  }
+
+  pub fn has_nans(&self) -> bool {
+    self.origin.has_nans() || self.direction.has_nans() || self.t_max.is_nan()
   }
 
   pub fn at(self, t: f32) -> Point3f {
@@ -36,7 +43,7 @@ impl Ray {
 
 impl fmt::Display for Ray {
   fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-      write!(formatter, "Ray( o: {}, dir: {})", self.origin, self.direction )
+      write!(formatter, "Ray(|{} -> {})", self.origin, self.direction )
   }
 }
 
@@ -73,3 +80,6 @@ impl HitRecord {
     self.material = if let Some(mat) = &record.material { Some(Arc::clone(mat))} else { None };
   }
 }
+
+
+// todo : differential ray

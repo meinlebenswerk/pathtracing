@@ -1,4 +1,4 @@
-use crate::geometry::point::Point3f;
+use crate::geometry::point3::Point3f;
 use crate::geometry::ray::{Ray, HitRecord};
 use crate::geometry::vector3::Vector3f;
 use crate::prng::PRNG;
@@ -22,7 +22,7 @@ pub fn ray_color_weekend(ray: &Ray, depth: usize, context: &RTXContext, rng: &mu
 
         if let Some(material) = &record.material {
             if material.scatter(ray, &mut next_ray, &mut attenuation, &record, context, rng) {
-                return attenuation * ray_color_weekend(&next_ray, depth - 1, context, rng)
+                return attenuation.mul_elementwise(&ray_color_weekend(&next_ray, depth - 1, context, rng))
             }
 
             if material.is_emissive() {

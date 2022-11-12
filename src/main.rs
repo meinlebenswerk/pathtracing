@@ -30,7 +30,7 @@ mod cli;
 
 use bvh::generate_bvh;
 use cli::process_cli_args;
-use geometry::{vector3::Vector3f, point::Point3f};
+use geometry::{vector3::Vector3f, point3::Point3f};
 use material::{ DiffuseMaterial, EmissiveMaterial, RTXMaterial };
 use scene::{ Scene, RTXContext };
 use camera::Camera;
@@ -111,7 +111,8 @@ fn main() -> std::io::Result<()> {
     let aspect_ratio = (image_width as f32) / (image_height as f32);
 
     // Camera + Film
-    let mut film: Film = Film::new(image_width, image_height, 50.0);
+    let mut framebuffer = vec![Vector3f::default(); image_height * image_width];
+    let film: Film = Film::new(image_width, image_height, 50.0);
 
     let camera = Arc::new(Camera::new(
         Point3f::new(0.0, 0.0, -1.5), 
@@ -136,16 +137,16 @@ fn main() -> std::io::Result<()> {
 
     // Box
     let box_white_mat: Arc<Box<(dyn RTXMaterial + Send + Sync + 'static)>> = Arc::new(Box::new(
-        DiffuseMaterial::new(Vector3f::from_hex("#fff"))
+        DiffuseMaterial::new(Vector3f::new(1.0, 1.0, 1.0))
     ));
     let box_green_mat: Arc<Box<(dyn RTXMaterial + Send + Sync + 'static)>> = Arc::new(Box::new(
-        DiffuseMaterial::new(Vector3f::from_hex("#0f0"))
+        DiffuseMaterial::new(Vector3f::new(0.0, 1.0, 0.0))
     ));
     let box_red_mat: Arc<Box<(dyn RTXMaterial + Send + Sync + 'static)>> = Arc::new(Box::new(
-        DiffuseMaterial::new(Vector3f::from_hex("#f00"))
+        DiffuseMaterial::new(Vector3f::new(1.0, 0.0, 0.0))
     ));
     let lightsource_mat: Arc<Box<(dyn RTXMaterial + Send + Sync + 'static)>> = Arc::new(
-        Box::new(EmissiveMaterial::new(Vector3f::from_hex("#fff"), 4.0)
+        Box::new(EmissiveMaterial::new(Vector3f::new(1.0, 1.0, 1.0), 4.0)
     ));
 
     let xz_plane_points = vec![
